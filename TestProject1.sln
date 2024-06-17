@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject1", "TestProject1\TestProject1.csproj", "{816C4E60-ACA0-499B-9978-E783AEEC4ACC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{592D954C-43BF-4995-9437-4CE76FE5677C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chainer", "Chainer\Chainer.csproj", "{592D954C-43BF-4995-9437-4CE76FE5677C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chainer.SourceGen", "Chainer.SourceGen\Chainer.SourceGen\Chainer.SourceGen.csproj", "{061BCBA9-6A3F-4742-A014-7618868FCBB2}"
 EndProject

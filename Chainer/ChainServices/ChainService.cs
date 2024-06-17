@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.DependencyInjection;
 using static CSharpFunctionalExtensions.Result;
@@ -5,11 +6,16 @@ using static CSharpFunctionalExtensions.Result;
 
 namespace ConsoleApp1;
 
+public interface IInitHandler<TContext>
+    where TContext : class, ICloneable, new()
+{
+    Type[] InitHandlers { get; }
+}
 
 public abstract class ChainService<TContext>(IServiceProvider services)
     where TContext : class, ICloneable, new()
 {
-    protected abstract List<Type> ChainHandlers { get; }
+    protected virtual List<Type> ChainHandlers { get; } = [];
     private List<IChainHandler<TContext>> Handlers { get; } = [];
 
     public async Task<Result<TContext>> Execute(TContext context, CancellationToken cancellationToken = default)
@@ -32,12 +38,15 @@ public abstract class ChainService<TContext>(IServiceProvider services)
             return output;
         }
 
+        output.Handlers.AddRange(ChainHandlers.Select(x => x.FullName).ToImmutableArray());
+
         var contextHistoryResult = await new ChainExecutor<TContext>([..Handlers])
             .ExecuteWithHistory(context, cancellationToken);
 
         output.History.AddRange(contextHistoryResult.History);
+        output.UnappliedHandlers.AddRange(output.Handlers[(output.History.Count - 1) ..]);
 
-        if (!contextHistoryResult.Result.IsFailure)
+        if (contextHistoryResult.Result.IsSuccess)
         {
             output.Result = contextHistoryResult.Result;
             return output;
@@ -51,20 +60,16 @@ public abstract class ChainService<TContext>(IServiceProvider services)
     {
         if (Handlers.Count != 0) return (true, null);
         {
-            var registeredHandlers = services
-                .GetServices<IChainHandler<TContext>>()
-                .Join(ChainHandlers, handler => handler.GetType().FullName, type => type.FullName,
-                    (handler, type) => (type, handler))
-                .ToDictionary(x => x.type, x => x.handler);
-
             foreach (var it in ChainHandlers)
             {
-                if (!registeredHandlers.TryGetValue(it, out var handler))
-                {
-                    return (false, $"Handler: {it.FullName} was not registered");
-                }
+                var handlerResult = Try(() => services.GetService(it))
+                    .Bind(x => x is IChainHandler<TContext> handler
+                        ? Success(handler)
+                        : Failure<IChainHandler<TContext>>(""));
 
-                Handlers.Add(handler);
+                if (handlerResult.IsFailure) return (false, $"Handler: {it.FullName} was not registered");
+
+                Handlers.Add(handlerResult.Value);
             }
         }
 

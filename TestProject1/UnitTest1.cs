@@ -1,3 +1,9 @@
+
+
+using ConsoleApp1;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
 namespace TestProject1;
 
 public class UnitTest1
@@ -5,16 +11,17 @@ public class UnitTest1
     [Fact]
     public void Test1()
     {
-        ReadOnlySpan<int> a = [1, 2, 3];
-        ReadOnlySpan<char> j = "dafdasdf";
+        var builder = Host.CreateDefaultBuilder();
 
-        Span<char> k = ['a', 'b', 'c'];
-        k.Fill(' ');
-        
-        var aa = string.Create(40, 40, (s, i) =>
-        {
-            s[0] = i.ToString().First();
-        });
+        builder.ConfigureServices(services => { services.RegisterChains(); });
+
+        var h = builder.Build();
+
+        const string i = "My name,,,, is Nathan Pepin. and .I'm legit";
+        var context = new FileContext { Content = i };
+
+        var chain = h.Services.GetRequiredService<FileChain>();
+        var result = await chain.ExecuteWithHistory(context);
     }
 }
 
@@ -22,3 +29,6 @@ public ref struct A
 {
     public ReadOnlySpan<int> Value { get; set; }
 }
+
+[RegisterChains<FileContext>(typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit))]
+public partial class FileChain(IServiceProvider services) : ChainService<FileContext>(services);

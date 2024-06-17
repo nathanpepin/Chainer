@@ -12,8 +12,11 @@ namespace ConsoleApp1;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class RegisterChains<TContext>(params Type[] types) : Attribute where TContext : class, ICloneable, new();
 
-[RegisterChains<FileContext>(typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit))]
-public class FileChain(IServiceProvider services) : ChainService<FileContext>(services);
+// [RegisterChains<FileContext>(typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit))]
+// public class FileChain(IServiceProvider services) : ChainService<FileContext>(services)
+// {
+//     protected override List<Type> ChainHandlers { get; }
+// }
 
 public class FileInOutChain(IServiceProvider services) : ChainInOutService<FileContext, string, string[]>(services)
 {

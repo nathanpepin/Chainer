@@ -8,6 +8,10 @@ public sealed class ContextHistoryResult<TContext> where TContext : class, IClon
     public Result<TContext> Result { get; set; }
 
     public List<HandlerResult<TContext>> History { get; } = [];
+    
+    public List<string> Handlers { get; } = [];
+
+    public List<string> UnappliedHandlers { get; } = [];
 }
 
 public sealed class ContextHistoryResult<TContext, TOut> where TContext : class, ICloneable, new()

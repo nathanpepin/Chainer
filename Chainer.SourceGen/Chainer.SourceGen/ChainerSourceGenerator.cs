@@ -1,13 +1,21 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using CSharpExtensions = Microsoft.CodeAnalysis.CSharp.CSharpExtensions;
 
 
 namespace Chainer.SourceGen;
+
+public static class Regexes
+{
+    public static Regex TypeName { get; } = new("<(.*)>");
+}
 
 /// <summary>
 /// A sample source generator that creates a custom report based on class properties. The target class should be annotated with the 'Generators.ReportAttribute' attribute.
@@ -19,6 +27,7 @@ public class ChainerSourceGenerator : IIncrementalGenerator
     private const string Namespace = "ChainerGenerators";
     private const string AttributeName = "RegisterChainsAttribute";
     private const string AttributeFullPath = $"{Namespace}.{AttributeName}";
+    private const string ChainRegistrationPrefix = "RegisterChains<";
 
     private const string AttributeSourceCode =
         $$"""
@@ -35,9 +44,9 @@ public class ChainerSourceGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
-            $"{AttributeName}.g.cs",
-            SourceText.From(AttributeSourceCode, Encoding.UTF8)));
+        // context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
+        //     $"{AttributeName}.g.cs",
+        //     SourceText.From(AttributeSourceCode, Encoding.UTF8)));
 
         var provider = context.SyntaxProvider
             .CreateSyntaxProvider(
@@ -46,7 +55,6 @@ public class ChainerSourceGenerator : IIncrementalGenerator
             .Where(t => t.attributeFound)
             .Select((t, _) => t.Item1);
 
-        // Generate the source code.
         context.RegisterSourceOutput(context.CompilationProvider.Combine(provider.Collect()),
             ((ctx, t) => GenerateCode(ctx, t.Left, t.Right)));
     }
@@ -56,20 +64,23 @@ public class ChainerSourceGenerator : IIncrementalGenerator
     {
         var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
 
-        foreach (var attributeSyntax in classDeclarationSyntax
-                     .AttributeLists
-                     .SelectMany(attributeListSyntax => attributeListSyntax.Attributes))
-        {
-            if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol)
-                continue;
+        var attribute = classDeclarationSyntax
+            .AttributeLists
+            .SelectMany(x => x.DescendantNodes().OfType<AttributeSyntax>())
+            .FirstOrDefault(x => x.Name.ToString().StartsWith(ChainRegistrationPrefix));
 
-            var attributeName = attributeSymbol.ContainingType.ToDisplayString();
+        return attribute is null
+            ? (classDeclarationSyntax, false)
+            : (classDeclarationSyntax, true);
+    }
 
-            if (attributeName == $"{Namespace}.{AttributeName}")
-                return (classDeclarationSyntax, true);
-        }
-
-        return (classDeclarationSyntax, false);
+    private static string GetContextName(ReadOnlySpan<char> attributeContextName)
+    {
+        var start = attributeContextName.IndexOf('<');
+        var end = attributeContextName.IndexOf('>');
+        var length = end - start;
+        var slice = attributeContextName.Slice(start + 1, length - 1);
+        return slice.ToString();
     }
 
     public class Registration(string className, string contextName)
@@ -83,14 +94,14 @@ public class ChainerSourceGenerator : IIncrementalGenerator
             stringBuilder.Append("services.TryAddScoped<");
             stringBuilder.Append(className);
             stringBuilder.Append(">();");
+            stringBuilder.AppendLine();
 
             foreach (var handler in Handlers)
             {
-                stringBuilder.Append("services.TryAddScoped<IChainHandler<");
-                stringBuilder.Append(contextName);
-                stringBuilder.Append(">, ");
+                stringBuilder.Append("services.TryAddScoped<");
                 stringBuilder.Append(handler);
                 stringBuilder.Append(">();");
+                stringBuilder.AppendLine();
             }
 
             return stringBuilder;
@@ -101,16 +112,76 @@ public class ChainerSourceGenerator : IIncrementalGenerator
         ImmutableArray<ClassDeclarationSyntax> classDeclarations)
     {
         List<Registration> registrations = [];
+        HashSet<string> usings = [];
+
+        SyntaxNode? root = null;
 
         foreach (var classDeclarationSyntax in classDeclarations)
         {
-            var semanticModel = compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
+            var compilationRoot = CSharpExtensions.GetCompilationUnitRoot(classDeclarationSyntax.SyntaxTree);
+            ;
+            root ??= classDeclarationSyntax.SyntaxTree.GetRoot();
+            
+            var p = classDeclarationSyntax
+                .Members
+                .OfType<PropertyDeclarationSyntax>()
+                .ToImmutableArray();
+                //.First(x => x.Identifier.Text == "ChainHandlers");
 
-            if (semanticModel.GetDeclaredSymbol(classDeclarationSyntax) is not INamedTypeSymbol classSymbol)
+            var semanticModel = compilation.GetSemanticModel(compilationRoot.SyntaxTree);
+
+            if (semanticModel.GetDeclaredSymbol(classDeclarationSyntax) is not ITypeSymbol classSymbol)
                 continue;
+            
+            var className = classSymbol.Name; //.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-            var className = classSymbol.ContainingNamespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var attribute = classSymbol.GetAttributes().First(x => x.AttributeClass?.AssociatedSymbol?.Name is AttributeFullPath);
+            var classNamespace = classSymbol.ContainingNamespace.ToDisplayString();
+            usings.Add($"using {classNamespace};");
+
+            var usingsArray = root
+                .DescendantNodes()
+                .OfType<UsingDirectiveSyntax>()
+                .Select(x => x.ToString())
+                .ToImmutableArray();
+
+            var attribute = classDeclarationSyntax
+                .AttributeLists
+                .SelectMany(x => x.DescendantNodes().OfType<AttributeSyntax>())
+                .First(x => x.Name.ToString().StartsWith(ChainRegistrationPrefix));
+            
+            var contextName = GetContextName(attribute.Name.ToString().AsSpan());
+
+            var typeArguments = attribute.ArgumentList!.Arguments.ToString();
+
+            var arguments = attribute.ArgumentList!.Arguments
+                .Select(x => (TypeOfExpressionSyntax)x.Expression)
+                .Select(x => x.Type.ToString())
+                .ToImmutableArray();
+
+            var registration = new Registration(className, contextName);
+
+            registration.Handlers.AddRange(arguments.Select(x => x.ToString()));
+
+            foreach (var @using in usingsArray)
+                usings.Add(@using);
+
+
+            registrations.Add(registration);
+
+             var classImplementation =
+                 $$"""
+                   {{string.Join("\r\n", usingsArray)}}
+
+                   namespace {{classNamespace}}
+                   {
+                       partial class {{className}}
+                       {
+                           protected override List<Type> ChainHandlers { get; } = new List<Type> { {{typeArguments}} };
+                       }
+                   }
+                   """;
+             
+             context.AddSource($"{className}-ChainHandlers.g.cs", SourceText.From(Helper.FormatCode(classImplementation), Encoding.UTF8));
         }
 
         StringBuilder generatedCodeBuilder = new();
@@ -124,6 +195,10 @@ public class ChainerSourceGenerator : IIncrementalGenerator
 
               using System;
               using System.Collections.Generic;
+              using Microsoft.Extensions.DependencyInjection;
+              using Microsoft.Extensions.DependencyInjection.Extensions;
+              using Microsoft.Extensions.Hosting;
+              {{string.Join("\r\n", usings)}}
 
               namespace {{Namespace}}
               {
@@ -137,6 +212,6 @@ public class ChainerSourceGenerator : IIncrementalGenerator
               }
               """;
 
-        context.AddSource($"ChainerRegistrar.g.cs", SourceText.From(code, Encoding.UTF8));
+        context.AddSource("ChainerRegistrar.g.cs", SourceText.From(Helper.FormatCode(code), Encoding.UTF8));
     }
 }

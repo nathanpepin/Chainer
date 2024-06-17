@@ -20,6 +20,13 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\ConsoleApp1\ConsoleApp1.csproj" />
+        <ProjectReference Include="..\Chainer.SourceGen\Chainer.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\ConsoleApp1\ConsoleApp1.csproj" />
     </ItemGroup>
 
 </Project>
