@@ -5,6 +5,7 @@ using static CSharpFunctionalExtensions.Result;
 
 namespace ConsoleApp1;
 
+
 public abstract class ChainService<TContext>(IServiceProvider services)
     where TContext : class, ICloneable, new()
 {

@@ -4,15 +4,16 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using BenchmarkDotNet.Attributes;
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace ConsoleApp1;
 
-public class FileChain(IServiceProvider services) : ChainService<FileContext>(services)
-{
-    protected override List<Type> ChainHandlers { get; } =
-        [typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit)];
-}
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class RegisterChains<TContext>(params Type[] types) : Attribute where TContext : class, ICloneable, new();
+
+[RegisterChains<FileContext>(typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit))]
+public class FileChain(IServiceProvider services) : ChainService<FileContext>(services);
 
 public class FileInOutChain(IServiceProvider services) : ChainInOutService<FileContext, string, string[]>(services)
 {

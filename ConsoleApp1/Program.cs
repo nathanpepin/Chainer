@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using BenchmarkDotNet.Running;
 using ConsoleApp1;
+using ConsoleApp1.Builder;
 using CSharpFunctionalExtensions;
 using Dumpify;
 using Microsoft.Extensions.DependencyInjection;
