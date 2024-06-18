@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
+using Chainer.ChainServices.ContextHistory;
 using CSharpFunctionalExtensions;
-using Microsoft.Extensions.DependencyInjection;
 using static CSharpFunctionalExtensions.Result;
 
 
-namespace ConsoleApp1;
+namespace Chainer.ChainServices;
 
 public interface IInitHandler<TContext>
     where TContext : class, ICloneable, new()
@@ -27,13 +27,20 @@ public abstract class ChainService<TContext>(IServiceProvider services)
             .Execute(context, cancellationToken);
     }
 
-    public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext context,
+    public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? context = null,
+        bool doNotCloneContext = false,
         CancellationToken cancellationToken = default)
     {
-        var output = new ContextHistoryResult<TContext>();
+        context ??= new TContext();
+
+        var output = new ContextHistoryResult<TContext>
+        {
+            Start = DateTime.UtcNow,
+        };
 
         if (RegisterHandlers() is (false, _) registration)
         {
+            output.End = DateTime.UtcNow;
             output.Result = Failure<TContext>(registration.Error);
             return output;
         }
@@ -41,10 +48,11 @@ public abstract class ChainService<TContext>(IServiceProvider services)
         output.Handlers.AddRange(ChainHandlers.Select(x => x.FullName).ToImmutableArray());
 
         var contextHistoryResult = await new ChainExecutor<TContext>([..Handlers])
-            .ExecuteWithHistory(context, cancellationToken);
+            .ExecuteWithHistory(context, doNotCloneContext: doNotCloneContext, cancellationToken: cancellationToken);
 
         output.History.AddRange(contextHistoryResult.History);
-        output.UnappliedHandlers.AddRange(output.Handlers[(output.History.Count - 1) ..]);
+        output.UnappliedHandlers.AddRange(output.Handlers[output.History.Count ..]);
+        output.End = DateTime.UtcNow;
 
         if (contextHistoryResult.Result.IsSuccess)
         {

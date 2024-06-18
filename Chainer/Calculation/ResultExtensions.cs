@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
 
-namespace ConsoleApp1;
+namespace Chainer.Calculation;
 
 public static class ResultExtensions
 {

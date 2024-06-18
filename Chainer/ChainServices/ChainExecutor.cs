@@ -1,9 +1,10 @@
-using System.Text.Json;
+using Chainer.Calculation;
+using Chainer.ChainServices.ContextHistory;
 using CSharpFunctionalExtensions;
 
-namespace ConsoleApp1;
+namespace Chainer.ChainServices;
 
-public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>? handlers = null) 
+public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>? handlers = null)
     where TContext : class, ICloneable, new()
 {
     private List<IChainHandler<TContext>> ChainHandlers { get; } = handlers?.ToList() ?? [];
@@ -14,8 +15,10 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
         return this;
     }
 
-    public async Task<Result<TContext>> Execute(TContext context, CancellationToken cancellationToken = default)
+    public async Task<Result<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)
     {
+        context ??= new TContext();
+        
         if (ChainHandlers.Count == 0) return Result.Failure<TContext>("There were no handlers to execute");
 
         var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
@@ -34,40 +37,47 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     }
 
     public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext context,
+        bool doNotCloneContext = false,
         CancellationToken cancellationToken = default)
     {
-        var output = new ContextHistoryResult<TContext>();
-        output.History.Add(new HandlerResult<TContext>("Initial", (TContext)context.Clone(), DateTime.Now, DateTime.Now));
-
+        var output = new ContextHistoryResult<TContext>()
+        {
+            Start = DateTime.UtcNow
+        };
+        
         if (ChainHandlers.Count == 0)
         {
             output.Result = Result.Failure<TContext>("There were no handlers to execute");
+            output.End = DateTime.Now;
             return output;
         }
 
         var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
-        
+
         while (queue.Count != 0)
         {
             var handler = queue.Dequeue();
 
-            var start = DateTime.Now;
+            var start = DateTime.UtcNow;
             var result = await Result.Try(() => handler.Handle(context, cancellationToken));
-            
+
             var flattenedResult = result.Flatten();
             output.Result = flattenedResult;
-            
-            if (flattenedResult.IsFailure)
-                return output;
 
-            var serializedContext = JsonSerializer.Serialize(flattenedResult.Value);
-            var clonedContext = JsonSerializer.Deserialize<TContext>(serializedContext) ?? 
-                                throw new JsonException($"{typeof(TContext).FullName} must be JSON serializable for cloning purposes");
-            
-            output.History.Add(new HandlerResult<TContext>(handler.GetType().FullName ?? "Could not get name",
-                clonedContext, start, DateTime.Now));
+            if (flattenedResult.IsFailure)
+            {
+                output.End = DateTime.UtcNow;
+                return output;
+            }
+
+            output.History.Add(new HandlerResult<TContext>(
+                handler.GetType().FullName ?? "Could not get name",
+                doNotCloneContext ? context : (TContext)context.Clone(),
+                start,
+                DateTime.UtcNow));
         }
 
+        output.End = DateTime.UtcNow;
         return output;
     }
 }

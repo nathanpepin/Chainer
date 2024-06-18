@@ -1,6 +1,6 @@
 using CSharpFunctionalExtensions;
 
-namespace ConsoleApp1;
+namespace Chainer.ChainServices;
 
 public interface IChainHandler<TContext> where TContext : class, ICloneable, new()
 {

@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
-using ConsoleApp1;
+using Chainer.ChainServices;
+using Chainer.SourceGen.Sample.FileContextChain.Handlers;
 
-namespace Chainer.SourceGen.Sample;
+namespace Chainer.SourceGen.Sample.FileContextChain.Chains;
 
 [RegisterChains<FileContext>(
     typeof(FileHandlerUpperCase),
