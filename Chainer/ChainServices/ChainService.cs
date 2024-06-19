@@ -1,20 +1,22 @@
 using System.Collections.Immutable;
 using Chainer.ChainServices.ContextHistory;
+using Microsoft.Extensions.Logging;
 
 namespace Chainer.ChainServices;
 
-public abstract class ChainService<TContext>(IServiceProvider services)
+public abstract class ChainService<TContext>(IServiceProvider services, ILogger<ChainService<TContext>> logger)
     where TContext : class, ICloneable, new()
 {
     protected virtual List<Type> ChainHandlers { get; } = [];
     private List<IChainHandler<TContext>> Handlers { get; } = [];
+    protected virtual bool LoggingEnabled => true;
 
     public async Task<Result<TContext>> Execute(TContext context, CancellationToken cancellationToken = default)
     {
-        if (RegisterHandlers() is (false, _) registration)
+        if (GetRegisteredHandlers() is (false, _) registration)
             return Failure<TContext>(registration.Error);
 
-        return await new ChainExecutor<TContext>([..Handlers])
+        return await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
             .Execute(context, cancellationToken);
     }
 
@@ -29,7 +31,7 @@ public abstract class ChainService<TContext>(IServiceProvider services)
             Start = DateTime.UtcNow
         };
 
-        if (RegisterHandlers() is (false, _) registration)
+        if (GetRegisteredHandlers() is (false, _) registration)
         {
             output.End = DateTime.UtcNow;
             output.Result = Failure<TContext>(registration.Error);
@@ -38,7 +40,7 @@ public abstract class ChainService<TContext>(IServiceProvider services)
 
         output.Handlers.AddRange(ChainHandlers.Select(x => x.FullName).ToImmutableArray());
 
-        var contextHistoryResult = await new ChainExecutor<TContext>([..Handlers])
+        var contextHistoryResult = await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
             .ExecuteWithHistory(context, doNotCloneContext, cancellationToken);
 
         output.History.AddRange(contextHistoryResult.History);
@@ -55,7 +57,7 @@ public abstract class ChainService<TContext>(IServiceProvider services)
         return output;
     }
 
-    private (bool Success, string? Error) RegisterHandlers()
+    private (bool Success, string? Error) GetRegisteredHandlers()
     {
         if (Handlers.Count != 0) return (true, null);
         {
