@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -13,12 +14,45 @@ public class ChainerSourceGenTests
         using System;
         using Chainer.ChainServices;
         using Chainer.SourceGen.Sample.FileContextChain.Handlers;
-
+        using Microsoft.Extensions.Logging;
+        
         namespace Chainer.SourceGen.Sample.FileContextChain.Chains;
-
-        [RegisterChains<FileContext>(typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit))]
-        public partial class FileChainTest(IServiceProvider services) : ChainService<FileContext>(services)
+        
+        [RegisterChains<FileContext>(
+            typeof(FileHandlerUpperCase),
+            typeof(FileHandlerRemoveComma),
+            typeof(FileHandlerIsLegit))]
+        public partial class FileChain(IServiceProvider services, ILogger<FileChain> logger) : ChainService<FileContext>(services, logger)
         {
+            protected override bool LoggingEnabled => false;
+        }
+        
+        public class FileHandlerRemoveComma : IChainHandler<FileContext>
+        {
+            public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+            {
+                context.Content = context.Content.Replace(",", "");
+                return Task.FromResult<Result<FileContext>>(context);
+            }
+        }
+        
+        public class FileHandlerIsLegit : IChainHandler<FileContext>
+        {
+            public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+            {
+                return !context.Content.Contains("Legit", StringComparison.InvariantCultureIgnoreCase)
+                    ? Task.FromResult(Result.Failure<FileContext>("This ain't legit"))
+                    : Task.FromResult<Result<FileContext>>(context);
+            }
+        }
+        
+        public class FileHandlerUpperCase : IChainHandler<FileContext>
+        {
+            public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+            {
+                context.Content = context.Content.ToUpperInvariant();
+                return Task.FromResult<Result<FileContext>>(context);
+            }
         }
         """;
 
@@ -30,10 +64,11 @@ public class ChainerSourceGenTests
         using Microsoft.Extensions.DependencyInjection;
         using Microsoft.Extensions.DependencyInjection.Extensions;
         using Microsoft.Extensions.Hosting;
-        using TestNamespace;
-        using Chainer;
+        using Chainer.SourceGen.Sample.FileContextChain.Chains;
         using Chainer.ChainServices;
-
+        using Chainer.SourceGen.Sample.FileContextChain.Handlers;
+        using Microsoft.Extensions.Logging;
+        
         namespace Chainer.ChainServices
         {
             public static class ChainerRegistrar

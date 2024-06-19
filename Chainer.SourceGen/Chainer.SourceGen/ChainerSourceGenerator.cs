@@ -92,7 +92,7 @@ public class ChainerSourceGenerator : IIncrementalGenerator
 
             registrations.Add(registration);
 
-            var classImplementation = ChainServiceImplemenation(classUsings, classNamespace, classSymbol.Name, typedArguments);
+            var classImplementation = ChainServiceImpl(classUsings, classNamespace, classSymbol.Name, typedArguments);
 
             context.AddSource(GetChainHandlerFilename(classSymbol.Name), SourceText.From(Helper.FormatCode(classImplementation), Encoding.UTF8));
         }
