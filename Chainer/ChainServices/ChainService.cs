@@ -35,7 +35,7 @@ public abstract class ChainService<TContext>(IServiceProvider services)
 
         var output = new ContextHistoryResult<TContext>
         {
-            Start = DateTime.UtcNow,
+            Start = DateTime.UtcNow
         };
 
         if (RegisterHandlers() is (false, _) registration)
@@ -48,7 +48,7 @@ public abstract class ChainService<TContext>(IServiceProvider services)
         output.Handlers.AddRange(ChainHandlers.Select(x => x.FullName).ToImmutableArray());
 
         var contextHistoryResult = await new ChainExecutor<TContext>([..Handlers])
-            .ExecuteWithHistory(context, doNotCloneContext: doNotCloneContext, cancellationToken: cancellationToken);
+            .ExecuteWithHistory(context, doNotCloneContext, cancellationToken);
 
         output.History.AddRange(contextHistoryResult.History);
         output.UnappliedHandlers.AddRange(output.Handlers[output.History.Count ..]);

@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Chainer.SourceGen.Tests;
@@ -16,9 +13,9 @@ public class ChainerSourceGenTests
         using System;
         using Chainer.ChainServices;
         using Chainer.SourceGen.Sample.FileContextChain.Handlers;
-        
+
         namespace Chainer.SourceGen.Sample.FileContextChain.Chains;
-        
+
         [RegisterChains<FileContext>(typeof(FileHandlerUpperCase), typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit))]
         public partial class FileChainTest(IServiceProvider services) : ChainService<FileContext>(services)
         {
@@ -36,7 +33,7 @@ public class ChainerSourceGenTests
         using TestNamespace;
         using Chainer;
         using Chainer.ChainServices;
-        
+
         namespace Chainer.ChainServices
         {
             public static class ChainerRegistrar
@@ -59,13 +56,13 @@ public class ChainerSourceGenTests
 
         var driver = CSharpGeneratorDriver.Create(generator);
 
-       var references = new[]
+        var references = new[]
         {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IServiceProvider).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(IChainerMarker).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IChainerMarker).Assembly.Location)
         };
-        
+
         var compilation = CSharpCompilation.Create(nameof(ChainerSourceGenTests),
             new[] { CSharpSyntaxTree.ParseText(Source) },
             references,
@@ -75,7 +72,7 @@ public class ChainerSourceGenTests
 
         var generatedFileSyntax = runResult.GeneratedTrees.Single(t => t.FilePath.EndsWith("ChainerRegistrar.g.cs"));
         var generatedText = generatedFileSyntax.GetText().ToString();
-        
+
         Assert.Equal(Expected, generatedText, ignoreLineEndingDifferences: true);
     }
 }

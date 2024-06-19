@@ -11,8 +11,6 @@ public static class Program
 {
     public static void Main()
     {
-     var k =   typeof(RegisterChains<FileContext>).FullName;
-        
         var builder = Host.CreateApplicationBuilder();
 
         builder.Services.RegisterChains();
@@ -23,7 +21,7 @@ public static class Program
         var context = new FileContext { Content = i };
 
         var chain = host.Services.GetRequiredService<FileChain>();
-        var output = chain.ExecuteWithHistory().Result;
+        var output = chain.ExecuteWithHistory(context).Result;
 
         Console.WriteLine(output);
     }

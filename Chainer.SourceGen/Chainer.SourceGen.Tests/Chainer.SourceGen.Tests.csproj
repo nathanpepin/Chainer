@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\Chainer\Chainer.csproj" />
+        <ProjectReference Include="..\..\Chainer\Chainer.csproj"/>
         <ProjectReference Include="..\Chainer.SourceGen\Chainer.SourceGen.csproj"/>
     </ItemGroup>
 

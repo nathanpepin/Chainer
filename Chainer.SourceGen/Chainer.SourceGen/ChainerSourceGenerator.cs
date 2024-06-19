@@ -18,8 +18,9 @@ public static class Regexes
 }
 
 /// <summary>
-/// A sample source generator that creates a custom report based on class properties. The target class should be annotated with the 'Generators.ReportAttribute' attribute.
-/// When using the source code as a baseline, an incremental source generator is preferable because it reduces the performance overhead.
+///     A sample source generator that creates a custom report based on class properties. The target class should be annotated with the
+///     'Generators.ReportAttribute' attribute.
+///     When using the source code as a baseline, an incremental source generator is preferable because it reduces the performance overhead.
 /// </summary>
 [Generator]
 public class ChainerSourceGenerator : IIncrementalGenerator
@@ -39,7 +40,7 @@ public class ChainerSourceGenerator : IIncrementalGenerator
             .Select((t, _) => t.Item1);
 
         context.RegisterSourceOutput(context.CompilationProvider.Combine(provider.Collect()),
-            ((ctx, t) => GenerateCode(ctx, t.Left, t.Right)));
+            (ctx, t) => GenerateCode(ctx, t.Left, t.Right));
     }
 
     private static (ClassDeclarationSyntax, bool attributeFound) GetClassDeclarationForSourceGen(
@@ -56,7 +57,7 @@ public class ChainerSourceGenerator : IIncrementalGenerator
             ? (classDeclarationSyntax, false)
             : (classDeclarationSyntax, true);
     }
-    
+
     private static void GenerateCode(SourceProductionContext context, Compilation compilation,
         ImmutableArray<ClassDeclarationSyntax> classDeclarations)
     {
@@ -75,7 +76,7 @@ public class ChainerSourceGenerator : IIncrementalGenerator
 
             if (semanticModel.GetDeclaredSymbol(classDeclarationSyntax) is not ITypeSymbol classSymbol)
                 continue;
-            
+
             var className = classSymbol.Name;
 
             var classNamespace = classSymbol.ContainingNamespace.ToDisplayString();
@@ -97,8 +98,8 @@ public class ChainerSourceGenerator : IIncrementalGenerator
             var k = classSymbol.GetTypeMembers();
             var p = classSymbol.GetType();
 
-           var kk =  semanticModel.Compilation.GetTypeByMetadataName("Chainer.ChainServices.");
-            
+            var kk = semanticModel.Compilation.GetTypeByMetadataName("Chainer.ChainServices.");
+
             var contextName = GetContextName(attribute.Name.ToString().AsSpan());
 
             var typeArguments = attribute.ArgumentList!.Arguments.ToString();
@@ -117,21 +118,21 @@ public class ChainerSourceGenerator : IIncrementalGenerator
 
             registrations.Add(registration);
 
-             var classImplementation =
-                 $$"""
-                   using System.Collections.Generic;
-                   {{string.Join("\r\n", usingsArray)}}
+            var classImplementation =
+                $$"""
+                  using System.Collections.Generic;
+                  {{string.Join("\r\n", usingsArray)}}
 
-                   namespace {{classNamespace}}
-                   {
-                       partial class {{className}}
-                       {
-                           protected override List<Type> ChainHandlers { get; } = new List<Type> { {{typeArguments}} };
-                       }
-                   }
-                   """;
-             
-             context.AddSource($"{className}-ChainHandlers.g.cs", SourceText.From(Helper.FormatCode(classImplementation), Encoding.UTF8));
+                  namespace {{classNamespace}}
+                  {
+                      partial class {{className}}
+                      {
+                          protected override List<Type> ChainHandlers { get; } = new List<Type> { {{typeArguments}} };
+                      }
+                  }
+                  """;
+
+            context.AddSource($"{className}-ChainHandlers.g.cs", SourceText.From(Helper.FormatCode(classImplementation), Encoding.UTF8));
         }
 
         StringBuilder generatedCodeBuilder = new();
@@ -164,7 +165,7 @@ public class ChainerSourceGenerator : IIncrementalGenerator
 
         context.AddSource("ChainerRegistrar.g.cs", SourceText.From(Helper.FormatCode(code), Encoding.UTF8));
     }
-    
+
     private static string GetContextName(ReadOnlySpan<char> attributeContextName)
     {
         var start = attributeContextName.IndexOf('<');
@@ -173,5 +174,4 @@ public class ChainerSourceGenerator : IIncrementalGenerator
         var slice = attributeContextName.Slice(start + 1, length - 1);
         return slice.ToString();
     }
-
 }

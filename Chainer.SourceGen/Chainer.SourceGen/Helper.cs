@@ -8,8 +8,10 @@ namespace Chainer.SourceGen;
 
 public static class Helper
 {
-    public static string FormatCode(string code) =>
-        CSharpSyntaxTree.ParseText(code).GetRoot().NormalizeWhitespace().ToFullString();
+    public static string FormatCode(string code)
+    {
+        return CSharpSyntaxTree.ParseText(code).GetRoot().NormalizeWhitespace().ToFullString();
+    }
 
     public static bool HasAttributeWithName(ISymbol it, string attributeName)
     {

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Chainer.Calculation;
 using Chainer.ChainServices.ContextHistory;
 using CSharpFunctionalExtensions;
@@ -18,7 +19,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     public async Task<Result<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)
     {
         context ??= new TContext();
-        
+
         if (ChainHandlers.Count == 0) return Result.Failure<TContext>("There were no handlers to execute");
 
         var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
@@ -40,17 +41,22 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
         bool doNotCloneContext = false,
         CancellationToken cancellationToken = default)
     {
-        var output = new ContextHistoryResult<TContext>()
+        var output = new ContextHistoryResult<TContext>
         {
             Start = DateTime.UtcNow
         };
-        
+
         if (ChainHandlers.Count == 0)
         {
             output.Result = Result.Failure<TContext>("There were no handlers to execute");
             output.End = DateTime.Now;
             return output;
         }
+
+        var handlerNames = ChainHandlers
+            .Select(x => x.GetType().FullName ?? "Could not get name")
+            .ToImmutableArray();
+        output.Handlers.AddRange(handlerNames);
 
         var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
 
@@ -66,7 +72,15 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
             if (flattenedResult.IsFailure)
             {
+                output.UnappliedHandlers.Add(handler.GetType().FullName ?? "Could not get name");
+
+                var unappliedHandlerNames = queue
+                    .Select(x => x.GetType().FullName ?? "Could not get name")
+                    .ToImmutableArray();
+                output.UnappliedHandlers.AddRange(unappliedHandlerNames);
+
                 output.End = DateTime.UtcNow;
+
                 return output;
             }
 
