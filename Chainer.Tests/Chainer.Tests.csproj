@@ -27,7 +27,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Chainer.SourceGen\Chainer.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
         <ProjectReference Include="..\Chainer\Chainer.csproj"/>
     </ItemGroup>
 

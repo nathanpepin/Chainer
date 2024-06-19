@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Chainer.SourceGen;
 
-public class Registration(string className, string contextName)
+public class Registration(string className)
 {
     public List<string> Handlers { get; } = [];
 

@@ -1,5 +1,3 @@
-using CSharpFunctionalExtensions;
-
 namespace Chainer.ChainServices;
 
 public interface IChainHandler<TContext> where TContext : class, ICloneable, new()

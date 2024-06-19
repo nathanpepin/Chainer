@@ -1,16 +1,7 @@
 using System.Collections.Immutable;
 using Chainer.ChainServices.ContextHistory;
-using CSharpFunctionalExtensions;
-using static CSharpFunctionalExtensions.Result;
-
 
 namespace Chainer.ChainServices;
-
-public interface IInitHandler<TContext>
-    where TContext : class, ICloneable, new()
-{
-    Type[] InitHandlers { get; }
-}
 
 public abstract class ChainService<TContext>(IServiceProvider services)
     where TContext : class, ICloneable, new()

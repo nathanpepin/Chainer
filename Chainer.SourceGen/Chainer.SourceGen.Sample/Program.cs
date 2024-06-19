@@ -5,24 +5,22 @@ using Chainer.SourceGen.Sample.FileContextChain.Chains;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Chainer.SourceGen.Sample;
+var builder = Host.CreateApplicationBuilder();
 
-public static class Program
-{
-    public static void Main()
-    {
-        var builder = Host.CreateApplicationBuilder();
+builder.Services.RegisterChains();
 
-        builder.Services.RegisterChains();
+var host = builder.Build();
 
-        var host = builder.Build();
+const string i = "My name,,,, is Nathan Pepin. and .I'm legit";
+var context = new FileContext { Content = i };
 
-        const string i = "My name,,,, is Nathan Pepin. and .I'm legit";
-        var context = new FileContext { Content = i };
+var chain = host.Services.GetRequiredService<FileChain>();
 
-        var chain = host.Services.GetRequiredService<FileChain>();
-        var output = chain.ExecuteWithHistory(context).Result;
+var executeOutput = chain.Execute(context).Result;
+Console.WriteLine(executeOutput);
 
-        Console.WriteLine(output);
-    }
-}
+var executeWithHistoryOutput = chain.ExecuteWithHistory(context).Result;
+Console.WriteLine(executeWithHistoryOutput);
+
+var executeWithHistoryWithoutCloneOutput = chain.ExecuteWithHistory(context, false).Result;
+Console.WriteLine(executeWithHistoryWithoutCloneOutput);

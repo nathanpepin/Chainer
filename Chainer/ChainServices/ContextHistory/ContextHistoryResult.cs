@@ -1,5 +1,4 @@
 using System.Text;
-using CSharpFunctionalExtensions;
 
 namespace Chainer.ChainServices.ContextHistory;
 

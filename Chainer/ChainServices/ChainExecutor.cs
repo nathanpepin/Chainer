@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using Chainer.Calculation;
 using Chainer.ChainServices.ContextHistory;
-using CSharpFunctionalExtensions;
 
 namespace Chainer.ChainServices;
 
@@ -20,13 +19,13 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     {
         context ??= new TContext();
 
-        if (ChainHandlers.Count == 0) return Result.Failure<TContext>("There were no handlers to execute");
+        if (ChainHandlers.Count == 0) return Failure<TContext>("There were no handlers to execute");
 
         var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
 
         while (queue.Count != 0)
         {
-            var result = await Result.Try(() => queue
+            var result = await Try(() => queue
                 .Dequeue()
                 .Handle(context, cancellationToken));
 
@@ -48,7 +47,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
         if (ChainHandlers.Count == 0)
         {
-            output.Result = Result.Failure<TContext>("There were no handlers to execute");
+            output.Result = Failure<TContext>("There were no handlers to execute");
             output.End = DateTime.Now;
             return output;
         }
@@ -65,7 +64,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
             var handler = queue.Dequeue();
 
             var start = DateTime.UtcNow;
-            var result = await Result.Try(() => handler.Handle(context, cancellationToken));
+            var result = await Try(() => handler.Handle(context, cancellationToken));
 
             var flattenedResult = result.Flatten();
             output.Result = flattenedResult;
