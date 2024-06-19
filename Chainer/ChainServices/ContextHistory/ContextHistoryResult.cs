@@ -2,27 +2,58 @@ using System.Text;
 
 namespace Chainer.ChainServices.ContextHistory;
 
+/// <summary>
+///     Contains the result of the chain execution and metadata about the execution
+/// </summary>
+/// <typeparam name="TContext"></typeparam>
 public sealed class ContextHistoryResult<TContext> where TContext : class, ICloneable, new()
 
 {
+    /// <summary>
+    ///     The result of the chain execution
+    /// </summary>
     public Result<TContext> Result { get; set; }
 
+    /// <summary>
+    ///     The history of the execution, including start and end times and the state of the context at each step (if enabled)
+    /// </summary>
     public List<HandlerResult<TContext>> History { get; } = [];
 
+    /// <summary>
+    ///     The handlers that were registered for the execution
+    /// </summary>
     public List<string> Handlers { get; } = [];
 
+    /// <summary>
+    ///     The handlers that were not applied during the execution
+    /// </summary>
     public List<string> UnappliedHandlers { get; } = [];
 
+    /// <summary>
+    ///     The starting time of the execution
+    /// </summary>
     public DateTime Start { get; init; }
+
+    /// <summary>
+    ///     The ending time of the execution
+    /// </summary>
     public DateTime End { get; set; }
 
+    /// <summary>
+    ///     The total time taken to execute the chain
+    /// </summary>
     public TimeSpan ExecutionTime => End - Start;
 
-    public override string ToString()
+    /// <summary>
+    ///     Pretty prints the result of the execution
+    /// </summary>
+    /// <returns></returns>
+    public string PrintOutput(bool includeLineBreaks = true)
     {
         StringBuilder stringBuilder = new();
 
-        stringBuilder.AppendLine("----------------------------------------");
+        if (includeLineBreaks)
+            stringBuilder.AppendLine("----------------------------------------");
 
         stringBuilder.AppendLine($"Context: {typeof(TContext).FullName}");
         stringBuilder.AppendLine($"Success: {Result.IsSuccess}");
@@ -45,8 +76,14 @@ public sealed class ContextHistoryResult<TContext> where TContext : class, IClon
             foreach (var handler in UnappliedHandlers) stringBuilder.AppendLine($"\t-{handler}");
         }
 
-        stringBuilder.AppendLine("----------------------------------------");
+        if (includeLineBreaks)
+            stringBuilder.AppendLine("----------------------------------------");
 
         return stringBuilder.ToString();
+    }
+
+    public override string ToString()
+    {
+        return PrintOutput();
     }
 }

@@ -4,14 +4,35 @@ using Microsoft.Extensions.Logging;
 
 namespace Chainer.ChainServices;
 
+/// <summary>
+///     A chainer service that executes a predefined chain of handlers via dependency injection.
+/// </summary>
+/// <param name="services"></param>
+/// <param name="logger"></param>
+/// <typeparam name="TContext">The context to be acted upon.</typeparam>
 public abstract class ChainService<TContext>(IServiceProvider services, ILogger<ChainService<TContext>> logger)
     where TContext : class, ICloneable, new()
 {
+    /// <summary>
+    ///     The chain handlers to execute. Override this property to define the chain of handlers.
+    /// </summary>
     protected virtual List<Type> ChainHandlers { get; } = [];
+
     private List<IChainHandler<TContext>> Handlers { get; } = [];
+
+    /// <summary>
+    ///     Override this property to enable or disable logging.
+    /// </summary>
     protected virtual bool LoggingEnabled => true;
 
-    public async Task<Result<TContext>> Execute(TContext context, CancellationToken cancellationToken = default)
+    /// <summary>
+    ///     Gets the registered handlers from the chain handlers and services.
+    ///     Safety executes the chain of handlers in sequence or registration and returns the final context result.
+    /// </summary>
+    /// <param name="context">The context to be acted upon.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<Result<TContext>> Execute(TContext? context, CancellationToken cancellationToken = default)
     {
         if (GetRegisteredHandlers() is (false, _) registration)
             return Failure<TContext>(registration.Error);
@@ -20,6 +41,18 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
             .Execute(context, cancellationToken);
     }
 
+    /// <summary>
+    ///     Gets the registered handlers from the chain handlers and services.
+    ///     Safety executes the chain of handlers in sequence or registration and returns the final context result.
+    /// </summary>
+    /// <param name="context">The context to be acted upon</param>
+    /// <param name="doNotCloneContext">
+    ///     If set to true, the context history will be set to the result.
+    ///     Otherwise, it will store a copy of the context state at each execution step.
+    /// </param>
+    /// ///
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? context = null,
         bool doNotCloneContext = false,
         CancellationToken cancellationToken = default)

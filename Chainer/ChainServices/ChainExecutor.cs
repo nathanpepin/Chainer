@@ -6,19 +6,36 @@ using Microsoft.Extensions.Logging;
 
 namespace Chainer.ChainServices;
 
+/// <summary>
+///     Chain executor that executes a chain of handlers by piping the results of each handler to the next one.
+///     If a chain handler fails for any caught or uncaught reason, the chain stops executing and returns the error.
+/// </summary>
+/// <param name="handlers">The handlers to execute. Can also use the AddHandler() method for fluent addition.</param>
+/// <param name="logger">The logger if wanted. The logger is passed down to each handler.</param>
+/// <typeparam name="TContext">The context to be acted upon.</typeparam>
 public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>? handlers = null, ILogger? logger = null)
     where TContext : class, ICloneable, new()
 {
+    private const string NoHandlersErrorMessage = "There were no handlers to execute";
     private List<IChainHandler<TContext>> ChainHandlers { get; } = handlers?.ToList() ?? [];
 
-    private const string NoHandlersErrorMessage = "There were no handlers to execute";
-
+    /// <summary>
+    ///     Adds a handler to the chain.
+    /// </summary>
+    /// <param name="handler"></param>
+    /// <returns></returns>
     public ChainExecutor<TContext> AddHandler(IChainHandler<TContext> handler)
     {
         ChainHandlers.Add(handler);
         return this;
     }
 
+    /// <summary>
+    ///     Safety executes the chain of handlers in sequence or registration and returns the final context result.
+    /// </summary>
+    /// <param name="context">The context to be acted upon.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<Result<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)
     {
         logger?.LogInformation("Executing chain");
@@ -38,7 +55,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
         Stopwatch chainStopWatch = new();
         chainStopWatch.Start();
-        
+
         Stopwatch handlerStopWatch = new();
 
         while (queue.Count != 0)
@@ -50,7 +67,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
             handlerStopWatch.Restart();
 
-            var result = await Try(() => handler.Handle(context, cancellationToken));
+            var result = await Try(() => handler.Handle(context, logger, cancellationToken));
 
             handlerStopWatch.Stop();
 
@@ -69,6 +86,17 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
         return context;
     }
 
+    /// <summary>
+    ///     Safety executes the chain of handlers in sequence or registration and returns the final context result.
+    ///     Provides metadata about the execution such as the start and end time, the handlers that were executed, and the history of the context.
+    /// </summary>
+    /// <param name="context">The context to be acted upon.</param>
+    /// <param name="doNotCloneContext">
+    ///     If set to true, the context history will be set to the result.
+    ///     Otherwise, it will store a copy of the context state at each execution step.
+    /// </param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? context,
         bool doNotCloneContext = false,
         CancellationToken cancellationToken = default)
@@ -102,7 +130,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
         Stopwatch chainStopWatch = new();
         chainStopWatch.Start();
-        
+
         Stopwatch handlerStopWatch = new();
 
         while (queue.Count != 0)
@@ -116,7 +144,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
             handlerStopWatch.Restart();
 
-            var result = await Try(() => handler.Handle(context, cancellationToken));
+            var result = await Try(() => handler.Handle(context, logger, cancellationToken));
 
             handlerStopWatch.Stop();
 

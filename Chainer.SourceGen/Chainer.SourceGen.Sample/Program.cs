@@ -22,5 +22,5 @@ Console.WriteLine(executeOutput);
 var executeWithHistoryOutput = chain.ExecuteWithHistory(context).Result;
 Console.WriteLine(executeWithHistoryOutput);
 
-var executeWithHistoryWithoutCloneOutput = chain.ExecuteWithHistory(context, false).Result;
+var executeWithHistoryWithoutCloneOutput = chain.ExecuteWithHistory(context).Result;
 Console.WriteLine(executeWithHistoryWithoutCloneOutput);
