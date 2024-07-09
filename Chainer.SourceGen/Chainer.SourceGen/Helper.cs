@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Chainer.SourceGen;
 
-public static class Helper
+internal static class Helper
 {
     public static string FormatCode(string code)
     {

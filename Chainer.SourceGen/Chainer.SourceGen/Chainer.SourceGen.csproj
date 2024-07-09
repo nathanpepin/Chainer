@@ -11,6 +11,22 @@
 
         <RootNamespace>Chainer.SourceGen</RootNamespace>
         <PackageId>Chainer.SourceGen</PackageId>
+
+        <Authors>Nathan Pepin</Authors>
+        <Title>Chainer.SourceGen - Adds method to register in DI</Title>
+        <Company>Nathan pepin</Company>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Product>Nathan Pepin</Product>
+        <Description>Adds method to register in DI.</Description>
+        <PackageProjectUrl>https://github.com/nathanpepin/Chainer</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>chain of responsibility,pipeline,source gneerator</PackageTags>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <PackageId>Chainer.SourceGen</PackageId>
+        <Copyright>Nathan Pepin</Copyright>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
     </PropertyGroup>
 
     <ItemGroup>

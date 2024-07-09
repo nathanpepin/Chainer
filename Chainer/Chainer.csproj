@@ -5,12 +5,26 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Chainer</RootNamespace>
+        <PackageId>Chainer</PackageId>
+        
+        <Authors>Nathan Pepin</Authors>
+        <Title>Chainer - Chain of responsibility simplified</Title>
+        <Company>Nathan pepin</Company>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Product>Nathan Pepin</Product>
+        <Description>Create chains of actions over a shared context. Create dymanically, or use via dependency injection.</Description>
+        <PackageProjectUrl>https://github.com/nathanpepin/Chainer</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>chain of responsibility,pipeline</PackageTags>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <Copyright>Nathan Pepin</Copyright>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.12"/>
         <PackageReference Include="CSharpFunctionalExtensions" Version="2.42.0"/>
-        <PackageReference Include="Dumpify" Version="0.6.6"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0"/>
     </ItemGroup>
 

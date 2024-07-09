@@ -106,7 +106,7 @@ Applied Handlers
 ```
 
 By default, the ExecuteWithHistory will clone and store the context at each step,
-but if that isn't wanted, the method has an overload to prevent that.
+but if that isn't wanted, the method has a parameter to prevent that.
 
 ```csharp
 public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? context,

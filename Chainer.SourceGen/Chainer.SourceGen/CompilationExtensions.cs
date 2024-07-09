@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Chainer.SourceGen;
 
-public static class CompilationExtensions
+internal static class CompilationExtensions
 {
     public static INamedTypeSymbol? GetBestTypeByMetadataName(this Compilation compilation,
         string fullyQualifiedMetadataName)
