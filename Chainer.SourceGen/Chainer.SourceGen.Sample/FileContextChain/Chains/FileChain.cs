@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Chainer.ChainServices;
 using Chainer.SourceGen.Sample.FileContextChain.Handlers;
 using Microsoft.Extensions.Logging;

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -15,9 +14,9 @@ public class ChainerSourceGenTests
         using Chainer.ChainServices;
         using Chainer.SourceGen.Sample.FileContextChain.Handlers;
         using Microsoft.Extensions.Logging;
-        
+
         namespace Chainer.SourceGen.Sample.FileContextChain.Chains;
-        
+
         [RegisterChains<FileContext>(
             typeof(FileHandlerUpperCase),
             typeof(FileHandlerRemoveComma),
@@ -26,7 +25,7 @@ public class ChainerSourceGenTests
         {
             protected override bool LoggingEnabled => false;
         }
-        
+
         public class FileHandlerRemoveComma : IChainHandler<FileContext>
         {
             public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
@@ -35,7 +34,7 @@ public class ChainerSourceGenTests
                 return Task.FromResult<Result<FileContext>>(context);
             }
         }
-        
+
         public class FileHandlerIsLegit : IChainHandler<FileContext>
         {
             public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
@@ -45,7 +44,7 @@ public class ChainerSourceGenTests
                     : Task.FromResult<Result<FileContext>>(context);
             }
         }
-        
+
         public class FileHandlerUpperCase : IChainHandler<FileContext>
         {
             public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
@@ -68,7 +67,7 @@ public class ChainerSourceGenTests
         using Chainer.ChainServices;
         using Chainer.SourceGen.Sample.FileContextChain.Handlers;
         using Microsoft.Extensions.Logging;
-        
+
         namespace Chainer.ChainServices
         {
             public static class ChainerRegistrar

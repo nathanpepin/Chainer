@@ -33,10 +33,8 @@ internal static class CompilationExtensions
             }
 
             if (type != null)
-            {
                 // Multiple visible types with the same metadata name are present
                 return null;
-            }
 
             type = currentType;
         }
@@ -87,13 +85,6 @@ internal static class CompilationExtensions
         return visibility;
     }
 
-    private enum SymbolVisibility
-    {
-        Public,
-        Internal,
-        Private,
-    }
-
     public static IEnumerable<INamedTypeSymbol> GetTypesByMetadataName(this Compilation compilation,
         string typeMetadataName)
     {
@@ -129,13 +120,10 @@ internal static class CompilationExtensions
         return SymbolEqualityComparer.Default.Equals(symbol, expectedType) ||
                (symbol is INamedTypeSymbol namedTypeSymbol && InheritsFrom(namedTypeSymbol, expectedType));
     }
-    
+
     public static AttributeData? GetAttribute(this ISymbol symbol, ITypeSymbol attributeType, bool inherits = true)
     {
-        if (attributeType.IsSealed)
-        {
-            inherits = false;
-        }
+        if (attributeType.IsSealed) inherits = false;
 
         foreach (var attribute in symbol.GetAttributes())
         {
@@ -161,28 +149,30 @@ internal static class CompilationExtensions
     {
         return GetAttribute(symbol, attributeType, inherits) is not null;
     }
-    
+
     public static ITypeSymbol? GetUnderlyingNullableTypeOrSelf(this ITypeSymbol? typeSymbol)
     {
         if (typeSymbol is not INamedTypeSymbol namedTypeSymbol) return null;
-        
-        if (namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T && namedTypeSymbol.TypeArguments.Length == 1)
-        {
-            return namedTypeSymbol.TypeArguments[0];
-        }
+
+        if (namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T && namedTypeSymbol.TypeArguments.Length == 1) return namedTypeSymbol.TypeArguments[0];
 
         return null;
     }
-    
+
     public static bool IsVisibleOutsideOfAssembly(this ISymbol symbol)
     {
         if (symbol.DeclaredAccessibility != Accessibility.Public &&
             symbol.DeclaredAccessibility != Accessibility.Protected &&
             symbol.DeclaredAccessibility != Accessibility.ProtectedOrInternal)
-        {
             return false;
-        }
 
         return symbol.ContainingType is null || IsVisibleOutsideOfAssembly(symbol.ContainingType);
+    }
+
+    private enum SymbolVisibility
+    {
+        Public,
+        Internal,
+        Private
     }
 }

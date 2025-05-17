@@ -1,6 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-
 namespace Chainer.Results;
 
 public readonly struct Result : IResult
@@ -15,11 +12,17 @@ public readonly struct Result : IResult
     public bool IsFailure => !IsSuccess;
     public string Error { get; }
 
-    public override string ToString() => IsSuccess
-        ? "Success"
-        : $"Failure({Error})";
+    public override string ToString()
+    {
+        return IsSuccess
+            ? "Success"
+            : $"Failure({Error})";
+    }
 
-    public static Result Success() => new(true, string.Empty);
+    public static Result Success()
+    {
+        return new Result(true, string.Empty);
+    }
 
     public static Result Failure(string error)
     {
@@ -29,19 +32,32 @@ public readonly struct Result : IResult
         return new Result(false, error);
     }
 
-    public static Result<T> Success<T>(T value) => Result<T>.Success(value);
+    public static Result<T> Success<T>(T value)
+    {
+        return Result<T>.Success(value);
+    }
 
-    public static Result<T> Failure<T>(string error) => Result<T>.Failure(error);
+    public static Result<T> Failure<T>(string error)
+    {
+        return Result<T>.Failure(error);
+    }
 
     // Implicit conversion from bool to Result
-    public static implicit operator Result(bool success) =>
-        success ? Success() : Failure("Operation failed");
+    public static implicit operator Result(bool success)
+    {
+        return success ? Success() : Failure("Operation failed");
+    }
 
     // Implicit conversion from Exception to Result
-    public static implicit operator Result(Exception exception) =>
-        Failure(exception.Message);
+    public static implicit operator Result(Exception exception)
+    {
+        return Failure(exception.Message);
+    }
 
-    public Result<T> WithValue<T>(T value) => IsSuccess ? Success(value) : Failure<T>(Error);
+    public Result<T> WithValue<T>(T value)
+    {
+        return IsSuccess ? Success(value) : Failure<T>(Error);
+    }
 
     public Result Ensure(Func<bool> predicate, string error)
     {

@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
-using Chainer.Calculation;
 using Chainer.ChainServices.ContextHistory;
 using Microsoft.Extensions.Logging;
 

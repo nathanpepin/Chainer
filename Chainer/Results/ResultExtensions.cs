@@ -2,6 +2,11 @@ namespace Chainer.Results;
 
 public static class ResultExtensions
 {
+    public static Result<T> Flatten<T>(this Result<Result<T>> it)
+    {
+        return it.IsFailure ? Failure<T>(it.Error) : it.Value;
+    }
+
     // Try methods - catch exceptions and convert to Result
     public static Result Try(Action action)
     {
@@ -54,25 +59,47 @@ public static class ResultExtensions
     }
 
     // Create success Result directly
-    public static Result Success() => Result.Success();
+    public static Result Success()
+    {
+        return Result.Success();
+    }
 
-    public static Result<T> Success<T>(T value) => Result.Success(value);
+    public static Result<T> Success<T>(T value)
+    {
+        return Result.Success(value);
+    }
 
     // Create failure Result directly
-    public static Result Failure(string error) => Result.Failure(error);
+    public static Result Failure(string error)
+    {
+        return Result.Failure(error);
+    }
 
-    public static Result<T> Failure<T>(string error) => Result.Failure<T>(error);
+    public static Result<T> Failure<T>(string error)
+    {
+        return Result.Failure<T>(error);
+    }
 
-    public static Result Failure(Exception exception) => Result.Failure(exception.Message);
+    public static Result Failure(Exception exception)
+    {
+        return Result.Failure(exception.Message);
+    }
 
-    public static Result<T> Failure<T>(Exception exception) => Result.Failure<T>(exception.Message);
+    public static Result<T> Failure<T>(Exception exception)
+    {
+        return Result.Failure<T>(exception.Message);
+    }
 
     // Existing extension methods
-    public static Result<TOut> OnSuccess<TIn, TOut>(this Result<TIn> result, Func<TIn, TOut> func) =>
-        result.Map(func);
+    public static Result<TOut> OnSuccess<TIn, TOut>(this Result<TIn> result, Func<TIn, TOut> func)
+    {
+        return result.Map(func);
+    }
 
-    public static Result<TIn> OnSuccess<TIn>(this Result<TIn> result, Action<TIn> action) =>
-        result.Tap(action);
+    public static Result<TIn> OnSuccess<TIn>(this Result<TIn> result, Action<TIn> action)
+    {
+        return result.Tap(action);
+    }
 
     public static Result<TIn> OnFailure<TIn>(this Result<TIn> result, Action<string> action)
     {

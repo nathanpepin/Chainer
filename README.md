@@ -53,6 +53,7 @@ public class FileHandlerIsLegit : IChainHandler<FileContext>
     }
 }
 ```
+
 Then define the chain using the method syntax.
 
 ```csharp
@@ -60,6 +61,7 @@ var chain = new ChainExecutor<FileContext>()
             .AddHandler(new FileHandlerRemoveComma())
             .AddHandler(new FileHandlerIsLegit());
 ```
+
 Or the constructor syntax.
 
 ```csharp
@@ -119,7 +121,7 @@ public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? c
 The ChainExecutor can be useful for chains that aren't predefined.
 They can also have some use being defined as keyed services.
 
-Handlers are not restricted in their scope and can be used for 
+Handlers are not restricted in their scope and can be used for
 data import, export, validation, and so on.
 
 ## Chain Service

@@ -35,7 +35,7 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     public async Task<Result<TContext>> Execute(TContext? context, CancellationToken cancellationToken = default)
     {
         if (GetRegisteredHandlers() is (false, _) registration)
-            return Failure<TContext>(registration.Error);
+            return Failure<TContext>(registration.Error ?? "Unknown error");
 
         return await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
             .Execute(context, cancellationToken);
@@ -67,7 +67,7 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
         if (GetRegisteredHandlers() is (false, _) registration)
         {
             output.End = DateTime.UtcNow;
-            output.Result = Failure<TContext>(registration.Error);
+            output.Result = Failure<TContext>(registration.Error ?? "Unknown error");
             return output;
         }
 
