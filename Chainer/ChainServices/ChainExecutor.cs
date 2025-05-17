@@ -67,7 +67,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
             handlerStopWatch.Restart();
 
-            var result = await Try(() => handler.Handle(context, logger, cancellationToken));
+            var result = await TryAsync(() => handler.Handle(context, logger, cancellationToken));
 
             handlerStopWatch.Stop();
 
@@ -144,7 +144,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
             handlerStopWatch.Restart();
 
-            var result = await Try(() => handler.Handle(context, logger, cancellationToken));
+            var result = await TryAsync(() => handler.Handle(context, logger, cancellationToken));
 
             handlerStopWatch.Stop();
 

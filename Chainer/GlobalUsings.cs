@@ -1,2 +1,2 @@
-global using CSharpFunctionalExtensions;
-global using static CSharpFunctionalExtensions.Result;
+global using Chainer.Results;
+global using static Chainer.Results.ResultExtensions;

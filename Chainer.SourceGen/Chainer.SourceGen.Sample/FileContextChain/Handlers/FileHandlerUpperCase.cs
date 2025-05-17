@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Chainer.ChainServices;
-using CSharpFunctionalExtensions;
+using Chainer.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Chainer.SourceGen.Sample.FileContextChain.Handlers;
