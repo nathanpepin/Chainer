@@ -7,70 +7,39 @@ namespace Chainer.ChainServices.ChainBuilder.ChainDefinitionService;
 
 public sealed class ChainDefinitionService(IChainRepository repository) : IChainDefinitionService
 {
-    // Create chain from JSON configuration
-    public Task<Result<Guid>> CreateChainAsync<TContext>(List<(Type HandlerType, object Configuration, int Order)> handlers, CancellationToken cancellationToken = default)
-        where TContext : class, ICloneable, new()
-    {
-        throw new NotImplementedException();
-    }
+    private readonly IHandlerConfiguration _handlerConfiguration = new HandlerConfiguration(new object(), HandlerConfigurationType.Object);
 
     public async Task<Result<Guid>> CreateChainAsync<TContext>(
-        List<(Type HandlerType, string? ConfigurationJson, int Order)> handlers,
+        List<ChainCommand> handlers,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new()
     {
         var chainId = Guid.NewGuid();
-        var messages = handlers.Select(h => new ChainMessageRecord
+
+        var messages = handlers
+            .Select(h => CreateChainMessage<TContext>(chainId, h))
+            .ToList();
+
+        var result = await repository.SaveChainMessagesAsync(chainId, messages, cancellationToken);
+
+        return result.IsFailure
+            ? Failure<Guid>(result.Error)
+            : Success(chainId);
+    }
+
+    private ChainMessage CreateChainMessage<TContext>(Guid chainId, ChainCommand h) where TContext : class, ICloneable, new()
+    {
+        _handlerConfiguration.SetConfiguration(h.Configuration, h.ConfigurationType);
+        var jsonValue = JsonSerializer.Serialize(_handlerConfiguration);
+
+        return new ChainMessage
         {
             Id = Guid.NewGuid(),
             ChainId = chainId,
             HandlerTypeName = h.HandlerType.AssemblyQualifiedName ?? h.HandlerType.FullName ?? h.HandlerType.Name,
-            ConfigurationJson = h.ConfigurationJson,
+            ConfigurationJson = jsonValue,
             ExecutionOrder = h.Order,
             ContextTypeName = typeof(TContext).AssemblyQualifiedName ?? typeof(TContext).FullName ?? typeof(TContext).Name
-        }).ToList();
-
-        var result = await repository.SaveChainMessagesAsync(chainId, messages, cancellationToken);
-        if (result.IsFailure)
-            return Failure<Guid>(result.Error);
-
-        return Success(chainId);
-    }
-
-    // Create chain from dictionary configuration
-    public async Task<Result<Guid>> CreateChainAsync<TContext>(
-        List<(Type HandlerType, IDictionary<string, object?>? Configuration, int Order)> handlers,
-        CancellationToken cancellationToken = default)
-        where TContext : class, ICloneable, new()
-    {
-        var chainId = Guid.NewGuid();
-        var messages = handlers.Select(h => new ChainMessageRecord
-        {
-            Id = Guid.NewGuid(),
-            ChainId = chainId,
-            HandlerTypeName = h.HandlerType.AssemblyQualifiedName ?? h.HandlerType.FullName ?? h.HandlerType.Name,
-            ConfigurationJson = h.Configuration != null
-                ? JsonSerializer.Serialize(h.Configuration)
-                : null,
-            ExecutionOrder = h.Order,
-            ContextTypeName = typeof(TContext).AssemblyQualifiedName ?? typeof(TContext).FullName ?? typeof(TContext).Name
-        }).ToList();
-
-        var result = await repository.SaveChainMessagesAsync(chainId, messages, cancellationToken);
-        if (result.IsFailure)
-            return Failure<Guid>(result.Error);
-
-        return Success(chainId);
-    }
-
-    // Create chain from IHandlerConfiguration
-    public async Task<Result<Guid>> CreateChainAsync<TContext>(
-        List<(Type HandlerType, IHandlerConfiguration? Configuration, int Order)> handlers,
-        CancellationToken cancellationToken = default)
-        where TContext : class, ICloneable, new()
-    {
-        // Implementation would convert the IHandlerConfiguration to JSON for storage
-        // This method would be useful for programmatically building complex configurations
-        throw new NotImplementedException();
+        };
     }
 }

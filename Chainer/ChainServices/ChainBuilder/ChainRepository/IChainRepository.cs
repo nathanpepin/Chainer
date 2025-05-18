@@ -4,7 +4,13 @@ namespace Chainer.ChainServices.ChainBuilder.ChainRepository;
 
 public interface IChainRepository
 {
-    Task<Result<List<ChainMessageRecord>>> GetChainMessagesAsync(Guid chainId, CancellationToken cancellationToken = default);
-    Task<Result> SaveChainMessagesAsync(Guid chainId, IEnumerable<ChainMessageRecord> messages, CancellationToken cancellationToken = default);
-    Task<Result> UpdateChainMessageStatusAsync(Guid messageId, ChainMessageStatus status, string? errorMessage = null, CancellationToken cancellationToken = default);
+    Task<Result<List<ChainMessage>>> GetChainMessagesAsync(Guid chainId, CancellationToken cancellationToken = default);
+    Task<Result> SaveChainMessagesAsync(Guid chainId, IEnumerable<ChainMessage> messages, CancellationToken cancellationToken = default);
+    Task<Result> SaveChainExecutionLogs(IEnumerable<ChainExecutionLog> chainExecutionLog, CancellationToken cancellationToken = default);
+    Task<Result> UpdateChainExecutionLog(ChainExecutionLog chainExecutionLog, ChainMessageStatus executing, CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateChainExecutionLog(ChainExecutionLog chainExecutionLog, ChainMessageStatus executing, string? beforeExecution, string afterExecution,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateChainExecutionLog(IEnumerable<ChainExecutionLog> chainExecutionLog, CancellationToken cancellationToken = default);
 }

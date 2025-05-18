@@ -1,275 +1,363 @@
+using System.Collections;
 using System.Text.Json;
+using System.Xml.Serialization;
 
 namespace Chainer.ChainServices.ChainBuilder.ConfigurationHandlers;
 
 public sealed class HandlerConfiguration : IHandlerConfiguration
 {
-    private readonly IDictionary<string, object?> _data;
-    private readonly string _path;
+    public HandlerConfigurationType ConfigurationType { get; private set; } = HandlerConfigurationType.NotSet;
 
-    // Creates a new root configuration
-    public HandlerConfiguration()
+    private IDictionary<string, object?>? _dictionaryData;
+    private string? _jsonData;
+    private object? _objectData;
+    private string? _xmlData;
+
+    public HandlerConfiguration(object value, HandlerConfigurationType type)
     {
-        _data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-        _path = string.Empty;
+        SetConfiguration(value, type);
     }
 
-    // Creates a section configuration
-    private HandlerConfiguration(IDictionary<string, object?> data, string path)
+    public static IHandlerConfiguration FromObject(object value)
     {
-        _data = data;
-        _path = path;
+        return new HandlerConfiguration(value, HandlerConfigurationType.Object);
     }
 
-    public T? GetValue<T>(string key, T? defaultValue = default)
-    {
-        if (string.IsNullOrEmpty(key))
-            return defaultValue;
-
-        // Check for a direct match in current section
-        if (_data.TryGetValue(key, out var value)) return ConvertValue<T>(value) ?? defaultValue;
-
-        // Handle dot notation for nested sections
-        var keyParts = key.Split(['.'], 2);
-        if (keyParts.Length == 2 && _data.TryGetValue(keyParts[0], out var section))
-            if (section is HandlerConfiguration sectionConfig)
-                return sectionConfig.GetValue(keyParts[1], defaultValue);
-
-        return defaultValue;
-    }
-
-    public IHandlerConfiguration GetSection(string key)
-    {
-        if (string.IsNullOrEmpty(key))
-            return this;
-
-        // Direct section match
-        if (_data.TryGetValue(key, out var value) && value is HandlerConfiguration section) return section;
-
-        // Create a section via hierarchical key
-        var keyParts = key.Split(['.'], 2);
-        if (keyParts.Length != 2 || !_data.TryGetValue(keyParts[0], out var firstSection))
-            return new HandlerConfiguration(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase), key);
-
-        if (firstSection is HandlerConfiguration sectionConfig) return sectionConfig.GetSection(keyParts[1]);
-
-        // Return empty configuration for non-existent sections
-        return new HandlerConfiguration(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase), key);
-    }
-
-    public T Bind<T>() where T : class, new()
-    {
-        var instance = new T();
-        Bind(instance);
-        return instance;
-    }
-
-    public void Bind<T>(T instance) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(instance);
-
-        var type = typeof(T);
-        var properties = type.GetProperties().Where(p => p.CanWrite);
-
-        foreach (var property in properties)
-        {
-            var propertyType = property.PropertyType;
-            var key = property.Name;
-
-            // Check if a value exists for this property
-            if (!_data.TryGetValue(key, out var rawValue)) continue;
-
-            if (rawValue is HandlerConfiguration section && !propertyType.IsPrimitive && propertyType != typeof(string))
-            {
-                // Handle complex type
-                if (!propertyType.IsClass) continue;
-
-                var value = property.GetValue(instance);
-                if (value is null)
-                {
-                    value = Activator.CreateInstance(propertyType);
-                    property.SetValue(instance, value);
-                }
-
-                if (value is not null) section.Bind(value);
-            }
-            else
-            {
-                // Handle simple type
-                var value = ConvertValue(rawValue, propertyType);
-                if (value != null) property.SetValue(instance, value);
-            }
-        }
-    }
-
-    public bool Contains(string key)
-    {
-        if (string.IsNullOrEmpty(key))
-            return false;
-
-        // Direct match
-        if (_data.ContainsKey(key))
-            return true;
-
-        // Check nested sections
-        var keyParts = key.Split(['.'], 2);
-        if (keyParts.Length == 2 && _data.TryGetValue(keyParts[0], out var section))
-            if (section is HandlerConfiguration sectionConfig)
-                return sectionConfig.Contains(keyParts[1]);
-
-        return false;
-    }
-
-    // Create from JSON string
     public static IHandlerConfiguration FromJson(string json)
     {
-        if (string.IsNullOrEmpty(json))
-            return new HandlerConfiguration();
-
-        var config = new HandlerConfiguration();
-        var jsonElement = JsonSerializer.Deserialize<JsonElement>(json);
-        PopulateFromJsonElement(config._data, jsonElement);
-        return config;
+        return new HandlerConfiguration(json, HandlerConfigurationType.Json);
     }
 
-    // Create from dictionary
     public static IHandlerConfiguration FromDictionary(IDictionary<string, object?> dictionary)
     {
-        var config = new HandlerConfiguration();
-        foreach (var (key, value) in dictionary)
-            if (value is IDictionary<string, object?> dict)
-            {
-                config._data[key] = FromDictionary(dict);
-            }
-            else if (value is JsonElement jsonElement)
-            {
-                if (jsonElement.ValueKind == JsonValueKind.Object)
+        return new HandlerConfiguration(dictionary, HandlerConfigurationType.Dictionary);
+    }
+
+    public static IHandlerConfiguration FromXml(string xml)
+    {
+        return new HandlerConfiguration(xml, HandlerConfigurationType.Xml);
+    }
+
+    public void SetConfiguration(object? value, HandlerConfigurationType type)
+    {
+        if (value == null)
+        {
+            ConfigurationType = HandlerConfigurationType.NotSet;
+            _dictionaryData = null;
+            _jsonData = null;
+            _objectData = null;
+            _xmlData = null;
+            return;
+        }
+
+        ConfigurationType = type;
+
+        switch (type)
+        {
+            case HandlerConfigurationType.Object:
+                _objectData = value;
+                _dictionaryData = null;
+                _jsonData = null;
+                _xmlData = null;
+                break;
+
+            case HandlerConfigurationType.Json:
+                if (value is string json)
                 {
-                    var nestedData = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-                    PopulateFromJsonElement(nestedData, jsonElement);
-                    config._data[key] = new HandlerConfiguration(nestedData, key);
+                    _jsonData = json;
+                    _objectData = null;
+                    _dictionaryData = null;
+                    _xmlData = null;
                 }
                 else
                 {
-                    config._data[key] = ConvertJsonElement(jsonElement);
+                    throw new ArgumentException("Value must be a string when using Json configuration type", nameof(value));
+                }
+
+                break;
+
+            case HandlerConfigurationType.Dictionary:
+                if (value is IDictionary<string, object?> dictionary)
+                {
+                    _dictionaryData = dictionary;
+                    _objectData = null;
+                    _jsonData = null;
+                    _xmlData = null;
+                }
+                else
+                {
+                    throw new ArgumentException("Value must be an IDictionary<string, object?> when using Dictionary configuration type", nameof(value));
+                }
+
+                break;
+
+            case HandlerConfigurationType.Xml:
+                if (value is string xml)
+                {
+                    _xmlData = xml;
+                    _objectData = null;
+                    _dictionaryData = null;
+                    _jsonData = null;
+                }
+                else
+                {
+                    throw new ArgumentException("Value must be a string when using Xml configuration type", nameof(value));
+                }
+
+                break;
+
+            case HandlerConfigurationType.NotSet:
+            default:
+                throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported configuration type");
+        }
+    }
+
+    public T? Bind<T>() where T : class, new()
+    {
+        if (TryBind<T>(out var result))
+        {
+            return result;
+        }
+
+        return new T(); // Return a default instance if binding fails
+    }
+
+    public bool TryBind<T>(out T? result) where T : class, new()
+    {
+        result = null;
+
+        try
+        {
+            switch (ConfigurationType)
+            {
+                case HandlerConfigurationType.Object:
+                    if (_objectData is T typedObject)
+                    {
+                        result = typedObject;
+                        return true;
+                    }
+                    else if (_objectData != null)
+                    {
+                        // Try to convert via JSON serialization/deserialization
+                        var json = JsonSerializer.Serialize(_objectData);
+                        result = JsonSerializer.Deserialize<T>(json);
+                        return result != null;
+                    }
+
+                    break;
+
+                case HandlerConfigurationType.Json:
+                    if (!string.IsNullOrEmpty(_jsonData))
+                    {
+                        var options = new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        };
+                        result = JsonSerializer.Deserialize<T>(_jsonData, options);
+                        return result != null;
+                    }
+
+                    break;
+
+                case HandlerConfigurationType.Dictionary:
+                    if (_dictionaryData != null)
+                    {
+                        result = DictionaryToObject<T>(_dictionaryData);
+                        return true;
+                    }
+
+                    break;
+
+                case HandlerConfigurationType.Xml:
+                    if (!string.IsNullOrEmpty(_xmlData))
+                    {
+                        var serializer = new XmlSerializer(typeof(T));
+                        using var reader = new StringReader(_xmlData);
+                        var obj = serializer.Deserialize(reader);
+                        if (obj is T typedXmlObject)
+                        {
+                            result = typedXmlObject;
+                            return true;
+                        }
+                    }
+
+                    break;
+                case HandlerConfigurationType.NotSet:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return false;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private T DictionaryToObject<T>(IDictionary<string, object?> dictionary) where T : class, new()
+    {
+        var instance = new T();
+        var properties = typeof(T).GetProperties()
+            .Where(p => p.CanWrite)
+            .ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var entry in dictionary)
+        {
+            if (!properties.TryGetValue(entry.Key, out var property)) continue;
+
+            try
+            {
+                var value = ConvertValue(entry.Value, property.PropertyType);
+                if (value != null || Nullable.GetUnderlyingType(property.PropertyType) != null)
+                {
+                    property.SetValue(instance, value);
                 }
             }
-            else
+            catch
             {
-                config._data[key] = value;
+                // Skip properties that can't be converted
             }
+        }
 
-        return config;
+        return instance;
     }
 
-    private static void PopulateFromJsonElement(IDictionary<string, object?> data, JsonElement element)
-    {
-        if (element.ValueKind != JsonValueKind.Object)
-            return;
-
-        foreach (var property in element.EnumerateObject())
-            if (property.Value.ValueKind == JsonValueKind.Object)
-            {
-                var nestedData = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-                PopulateFromJsonElement(nestedData, property.Value);
-                data[property.Name] = new HandlerConfiguration(nestedData, property.Name);
-            }
-            else
-            {
-                data[property.Name] = ConvertJsonElement(property.Value);
-            }
-    }
-
-    private static object? ConvertJsonElement(JsonElement element)
-    {
-        return element.ValueKind switch
-        {
-            JsonValueKind.Null => null,
-            JsonValueKind.String => element.GetString(),
-            JsonValueKind.Number => element.TryGetInt64(out var intValue) ? intValue : element.GetDouble(),
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Array => element.EnumerateArray().Select(ConvertJsonElement).ToArray(),
-            _ => element.ToString()
-        };
-    }
-
-    private static T? ConvertValue<T>(object? value)
-    {
-        return (T?)ConvertValue(value, typeof(T));
-    }
-
-    private static object? ConvertValue(object? value, Type targetType)
+    private object? ConvertValue(object? value, Type targetType)
     {
         if (value == null)
-            return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+        {
+            return targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null
+                ? Activator.CreateInstance(targetType)
+                : null;
+        }
 
+        // If value is already the target type, return it
         if (targetType.IsInstanceOfType(value))
             return value;
 
         // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(targetType);
-        if (underlyingType != null) targetType = underlyingType;
+        if (underlyingType != null)
+        {
+            targetType = underlyingType;
+        }
 
-        // Handle numeric conversions
-        if ((value is IConvertible || value is JsonElement) &&
-            (targetType.IsPrimitive || targetType == typeof(decimal) || targetType == typeof(string)))
-            try
+        switch (value)
+        {
+            // Handle complex objects
+            case IDictionary<string, object?> nestedDict when
+                !targetType.IsPrimitive && targetType != typeof(string) &&
+                !targetType.IsEnum && Activator.CreateInstance(targetType) is { } nestedObj:
             {
-                if (value is not JsonElement element) return Convert.ChangeType(value, targetType);
+                var nestedProps = targetType.GetProperties()
+                    .Where(p => p.CanWrite)
+                    .ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
 
-                if (targetType == typeof(bool) && element.ValueKind == JsonValueKind.True)
-                    return true;
-                if (targetType == typeof(bool) && element.ValueKind == JsonValueKind.False)
-                    return false;
+                foreach (var entry in nestedDict)
+                {
+                    if (!nestedProps.TryGetValue(entry.Key, out var property)) continue;
 
-                if (targetType == typeof(string))
-                    return element.ToString();
+                    try
+                    {
+                        var convertedValue = ConvertValue(entry.Value, property.PropertyType);
+                        if (convertedValue != null || Nullable.GetUnderlyingType(property.PropertyType) != null)
+                        {
+                            property.SetValue(nestedObj, convertedValue);
+                        }
+                    }
+                    catch
+                    {
+                        // Skip properties that can't be converted
+                    }
+                }
 
-                if (element.ValueKind != JsonValueKind.Number) return Convert.ChangeType(value, targetType);
-
-                if (targetType == typeof(int)) return element.GetInt32();
-                if (targetType == typeof(long)) return element.GetInt64();
-                if (targetType == typeof(double)) return element.GetDouble();
-                if (targetType == typeof(decimal)) return element.GetDecimal();
-
-                return Convert.ChangeType(value, targetType);
+                return nestedObj;
             }
-            catch
+            // Handle collections/lists
+            case IList listValue when typeof(IList).IsAssignableFrom(targetType) &&
+                                      targetType.IsGenericType && Activator.CreateInstance(targetType) is IList targetList:
             {
-                /* Continue with other conversion methods */
+                var elementType = targetType.GetGenericArguments()[0];
+
+                foreach (var item in listValue)
+                {
+                    var convertedItem = ConvertValue(item, elementType);
+                    if (convertedItem != null || Nullable.GetUnderlyingType(elementType) == null)
+                    {
+                        targetList.Add(convertedItem);
+                    }
+                }
+
+                return targetList;
+            }
+            // Handle JsonElement to primitive/enum conversion
+            case JsonElement element:
+                return element.ValueKind switch
+                {
+                    JsonValueKind.String => ConvertValue(element.GetString(), targetType),
+                    JsonValueKind.Number => element.TryGetInt64(out var l) ? ConvertValue(l, targetType) : ConvertValue(element.GetDouble(), targetType),
+                    JsonValueKind.True => ConvertValue(true, targetType),
+                    JsonValueKind.False => ConvertValue(false, targetType),
+                    _ => null
+                };
+        }
+
+        // Handle primitive types and enums
+        try
+        {
+            // Handle enum conversions
+            if (targetType.IsEnum)
+            {
+                switch (value)
+                {
+                    case string strValue:
+                        return Enum.Parse(targetType, strValue, ignoreCase: true);
+                    case IConvertible numValue:
+                        return Enum.ToObject(targetType, Convert.ToInt32(numValue));
+                }
             }
 
-        // Handle enum conversions
-        if (targetType.IsEnum)
-            switch (value)
+            // Handle TimeSpan
+            if (targetType == typeof(TimeSpan))
             {
-                case string strValue:
-                    return Enum.Parse(targetType, strValue, true);
-                case IConvertible numValue:
-                    return Enum.ToObject(targetType, Convert.ToInt32(numValue));
-            }
-
-        // Handle TimeSpan
-        if (targetType == typeof(TimeSpan))
-            switch (value)
-            {
-                case string s when TimeSpan.TryParse(s, out var timeSpan):
+                if (value is string s && TimeSpan.TryParse(s, out var timeSpan))
                     return timeSpan;
-                case double d:
+                if (value is double d)
                     return TimeSpan.FromSeconds(d);
             }
 
-        // Last resort - try string conversion
-        try
-        {
-            var stringValue = value.ToString();
-            if (stringValue != null && targetType != typeof(object))
-                return Convert.ChangeType(stringValue, targetType);
+            // Handle DateTime
+            if (targetType == typeof(DateTime))
+            {
+                if (value is string s && DateTime.TryParse(s, out var dateTime))
+                    return dateTime;
+            }
+
+            // Try standard conversion
+            if (value is IConvertible)
+            {
+                return Convert.ChangeType(value, targetType);
+            }
         }
         catch
         {
-            /* Failed to convert */
+            // Conversion failed, try string-based approach
+        }
+
+        // Last-ditch effort: try string conversion
+        try
+        {
+            var stringValue = value.ToString();
+            if (stringValue != null)
+            {
+                return Convert.ChangeType(stringValue, targetType);
+            }
+        }
+        catch
+        {
+            // Last resort failed
         }
 
         return null;

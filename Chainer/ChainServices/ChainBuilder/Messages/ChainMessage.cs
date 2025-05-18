@@ -1,6 +1,9 @@
 namespace Chainer.ChainServices.ChainBuilder.Messages;
 
-public sealed class ChainMessageRecord
+/// <summary>
+/// A storable chain link
+/// </summary>
+public sealed class ChainMessage
 {
     public Guid Id { get; set; }
 
