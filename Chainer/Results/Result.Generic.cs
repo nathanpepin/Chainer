@@ -86,14 +86,14 @@ public readonly struct Result<T> : IResult<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetError([NotNullWhen(true)] [MaybeNullWhen(false)] out string error)
+    public bool TryGetError([MaybeNullWhen(false)] out string error)
     {
         error = Error;
         return IsFailure;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValue([NotNullWhen(true)] [MaybeNullWhen(false)] out T value, [NotNullWhen(false)] [MaybeNullWhen(true)] out string error)
+    public bool TryGetValue([NotNullWhen(true)] [MaybeNullWhen(false)] out T value, [MaybeNullWhen(true)] out string error)
     {
         value = _value;
         error = Error;
@@ -101,7 +101,7 @@ public readonly struct Result<T> : IResult<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetError([NotNullWhen(true)] [MaybeNullWhen(false)] out string error, [NotNullWhen(false)] [MaybeNullWhen(true)] out T value)
+    public bool TryGetError([MaybeNullWhen(false)] out string error, [NotNullWhen(false)] [MaybeNullWhen(true)] out T value)
     {
         value = _value;
         error = Error;
