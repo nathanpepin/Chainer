@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Text.Json;
 using Chainer.ChainServices.ChainBuilder.ChainRepository;
@@ -13,6 +14,8 @@ public sealed class DynamicChainExecutor(
     IServiceProvider serviceProvider,
     ILogger<DynamicChainExecutor> logger) : IDynamicChainExecutor
 {
+    private static readonly ConcurrentDictionary<string, Type?> TypeCache = new();
+
     public async Task<Result<TContext>> ExecuteChainAsync<TContext>(
         Guid chainId,
         TContext? initialContext = null,
@@ -78,7 +81,6 @@ public sealed class DynamicChainExecutor(
 
             errorState = true;
             errorMessage = result.Error;
-            context = result.Value;
         }
 
         return (success: !errorState, context, errorMessage);
@@ -123,9 +125,11 @@ public sealed class DynamicChainExecutor(
         where TContext : class, ICloneable, new()
     {
         // Get handler type
-        var handlerType = Type.GetType(message.HandlerTypeName);
-        if (handlerType == null)
+        var handlerType = TypeCache.GetOrAdd(message.HandlerTypeName, Type.GetType);
+        if (handlerType is null)
+        {
             return Failure<TContext>($"Handler type {message.HandlerTypeName} not found");
+        }
 
         // Get handler instance from DI or create new
         var handler = serviceProvider.GetService(handlerType) ??
