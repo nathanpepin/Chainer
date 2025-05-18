@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Chainer.ChainServices.Hashing;
 
-internal static class GuidFromString
+public static class GuidFromString
 {
     public static Guid CreateDeterministicGuid(string input)
     {

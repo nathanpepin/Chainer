@@ -4,6 +4,7 @@ using System.Text.Json;
 using Chainer.ChainServices.ChainBuilder.ChainRepository;
 using Chainer.ChainServices.ChainBuilder.ConfigurationHandlers;
 using Chainer.ChainServices.ChainBuilder.Messages;
+using Chainer.ChainServices.Hashing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -15,6 +16,19 @@ public sealed class DynamicChainExecutor(
     ILogger<DynamicChainExecutor> logger) : IDynamicChainExecutor
 {
     private static readonly ConcurrentDictionary<string, Type?> TypeCache = new();
+
+    public Task<DynamicChainExecutionResult<TContext>> ExecuteDefaultChainAsync<TContext>(TContext? initialContext = null, CancellationToken cancellationToken = default)
+        where TContext : class, ICloneable, new()
+    {
+        return ExecuteChainAsync(InMemoryChainRepository.DefaultChainGuid, initialContext, cancellationToken);
+    }
+
+    public Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(string friendlyName, TContext? initialContext = null, CancellationToken cancellationToken = default)
+        where TContext : class, ICloneable, new()
+    {
+        var chainId = GuidFromString.CreateDeterministicGuid(friendlyName);
+        return ExecuteChainAsync(chainId, initialContext, cancellationToken);
+    }
 
     public async Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         Guid chainId,

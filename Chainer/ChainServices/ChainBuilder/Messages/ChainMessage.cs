@@ -9,6 +9,7 @@ public sealed class ChainMessage
 
     // Chain identification
     public Guid ChainId { get; set; }
+    public string FriendlyName { get; set; } = string.Empty;
     public int ExecutionOrder { get; set; }
 
     // Handler information
