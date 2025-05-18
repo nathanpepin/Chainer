@@ -25,14 +25,14 @@ public sealed class InMemoryChainRepository : IChainRepository
     public Task<Result<List<ChainMessage>>> GetChainMessagesAsync(Guid chainId, CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested)
-            return Task.FromResult(Result.Failure<List<ChainMessage>>("Operation was canceled"));
+            return Task.FromResult(Result<List<ChainMessage>>.Failure("Operation was canceled"));
 
         if (Messages.TryGetValue(chainId, out var messages))
         {
-            return Task.FromResult(Result.Success(messages));
+            return Task.FromResult(Result<List<ChainMessage>>.Success(messages));
         }
 
-        return Task.FromResult(Result.Success(new List<ChainMessage>()));
+        return Task.FromResult(Result<List<ChainMessage>>.Success([]));
     }
 
     public Task<Result> SaveToDefaultChainMessagesAsync(IEnumerable<ChainMessage> messages, CancellationToken cancellationToken = default)

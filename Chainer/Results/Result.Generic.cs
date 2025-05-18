@@ -7,32 +7,27 @@ public readonly struct Result<T> : IResult<T>
 {
     private readonly T _value;
 
-    private Result(bool isSuccess, T value, string error)
+    private Result(bool isSuccess, T value, string error, Exception? exception = null)
     {
         IsSuccess = isSuccess;
         _value = isSuccess ? value : default!;
         Error = isSuccess ? string.Empty : error;
+        Exception = isSuccess ? null : exception;
     }
 
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
     public string Error { get; }
+    public Exception? Exception { get; }
 
     public T Value => IsSuccess
         ? _value
         : throw new InvalidOperationException($"Cannot access Value when Result is in failure state. Error: {Error}");
 
-    public override string ToString()
-    {
-        return IsSuccess
-            ? $"Success({Value})"
-            : $"Failure({Error})";
-    }
+    public override string ToString() => IsSuccess ? $"Success({Value})" : $"Failure({Error})";
 
-    public static Result<T> Success(T value)
-    {
-        return new Result<T>(true, value, string.Empty);
-    }
+    // Factory methods
+    public static Result<T> Success(T value) => new(true, value, string.Empty);
 
     public static Result<T> Failure(string error)
     {
@@ -42,42 +37,34 @@ public readonly struct Result<T> : IResult<T>
         return new Result<T>(false, default!, error);
     }
 
-    // Implicit conversion from T to Result<T>
-    public static implicit operator Result<T>(T value)
+    public static Result<T> Failure(Exception exception)
     {
-        return Success(value);
+        return new Result<T>(false, default!, exception.Message, exception);
     }
 
-    // Implicit conversion from Result<T> to Result
-    public static implicit operator Result(Result<T> result)
-    {
-        return result.IsSuccess ? Result.Success() : Result.Failure(result.Error);
-    }
+    // Implicit conversions
+    public static implicit operator Result<T>(T value) => Success(value);
 
-    // Implicit conversion from Exception to Result<T>
-    public static implicit operator Result<T>(Exception exception)
-    {
-        return Failure(exception.Message);
-    }
+    public static implicit operator Result(Result<T> result) =>
+        result.IsSuccess ? Result.Success() :
+        result.Exception != null ? Result.Failure(result.Exception) : Result.Failure(result.Error);
 
-    // Implicit conversion from (bool, T) tuple to Result<T>
-    public static implicit operator Result<T>((bool Success, T Value) tuple)
-    {
-        return tuple.Success ? Success(tuple.Value) : Failure("Operation failed");
-    }
+    public static implicit operator Result<T>(Exception exception) =>
+        Failure(exception);
 
-    // Implicit conversion from (bool, string, T) tuple to Result<T>
-    public static implicit operator Result<T>((bool Success, string Error, T Value) tuple)
-    {
-        return tuple.Success ? Success(tuple.Value) : Failure(tuple.Error);
-    }
+    public static implicit operator Result<T>((bool Success, T Value) tuple) =>
+        tuple.Success ? Success(tuple.Value) : Failure("Operation failed");
 
-    // Explicit conversion from Result<T> to T (may throw if Result is failure)
-    public static explicit operator T(Result<T> result)
-    {
-        return result.Value;
-    }
+    public static implicit operator Result<T>((bool Success, string Error, T Value) tuple) =>
+        tuple.Success ? Success(tuple.Value) : Failure(tuple.Error);
 
+    public static implicit operator Result<T>((bool Success, Exception Exception, T Value) tuple) =>
+        tuple.Success ? Success(tuple.Value) : Failure(tuple.Exception);
+
+    // Explicit conversion to T (may throw)
+    public static explicit operator T(Result<T> result) => result.Value;
+
+    // Value access methods
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetValue([NotNullWhen(true)] [MaybeNullWhen(false)] out T value)
     {
@@ -93,95 +80,120 @@ public readonly struct Result<T> : IResult<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetValue([NotNullWhen(true)] [MaybeNullWhen(false)] out T value, [MaybeNullWhen(true)] out string error)
+    public bool TryGetException([NotNullWhen(true)] out Exception? exception)
     {
-        value = _value;
-        error = Error;
-        return IsSuccess;
+        exception = Exception;
+        return IsFailure && Exception != null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetError([MaybeNullWhen(false)] out string error, [NotNullWhen(false)] [MaybeNullWhen(true)] out T value)
+    public bool TryGetValue(
+        [NotNullWhen(true)] [MaybeNullWhen(false)]
+        out T value,
+        [MaybeNullWhen(true)] out string error,
+        [NotNullWhen(false)] out Exception? exception)
     {
         value = _value;
         error = Error;
-        return IsFailure;
+        exception = Exception;
+        return IsSuccess;
     }
 
-    public T GetValueOrDefault(T defaultValue)
-    {
-        return IsSuccess ? Value : defaultValue;
-    }
+    // Default value handling
+    public T GetValueOrDefault(T defaultValue) =>
+        IsSuccess ? Value : defaultValue;
 
-    public T GetValueOrDefault(Func<T> defaultValueFactory)
-    {
-        return IsSuccess ? Value : defaultValueFactory();
-    }
+    public T GetValueOrDefault(Func<T> defaultValueFactory) =>
+        IsSuccess ? Value : defaultValueFactory();
 
-    public Result<TResult> Map<TResult>(Func<T, TResult> mapper)
-    {
-        return IsSuccess ? Result.Success(mapper(Value)) : Result.Failure<TResult>(Error);
-    }
+    // Functional methods
+    public Result<TResult> Map<TResult>(Func<T, TResult> mapper) =>
+        IsSuccess ? Result<TResult>.Success(mapper(Value)) :
+        Exception != null ? Result<TResult>.Failure(Exception) : Result<TResult>.Failure(Error);
 
-    public async Task<Result<TResult>> MapAsync<TResult>(Func<T, Task<TResult>> mapper)
-    {
-        return IsSuccess ? Result.Success(await mapper(Value)) : Result.Failure<TResult>(Error);
-    }
+    public async Task<Result<TResult>> MapAsync<TResult>(Func<T, Task<TResult>> mapper) =>
+        IsSuccess ? Result<TResult>.Success(await mapper(Value)) :
+        Exception != null ? Result<TResult>.Failure(Exception) : Result<TResult>.Failure(Error);
 
-    public Result<T> MapError(Func<string, string> errorMapper)
-    {
-        return IsSuccess ? this : Failure(errorMapper(Error));
-    }
+    public Result<T> MapError(Func<string, string> errorMapper) =>
+        IsSuccess ? this : Failure(errorMapper(Error));
 
-    public Result<TResult> Bind<TResult>(Func<T, Result<TResult>> binder)
-    {
-        return IsSuccess ? binder(Value) : Result.Failure<TResult>(Error);
-    }
+    public Result<T> MapException(Func<Exception?, Exception> exceptionMapper) =>
+        IsSuccess ? this : Failure(exceptionMapper(Exception));
 
-    public async Task<Result<TResult>> BindAsync<TResult>(Func<T, Task<Result<TResult>>> binder)
-    {
-        return IsSuccess ? await binder(Value) : Result.Failure<TResult>(Error);
-    }
+    public Result<TResult> Bind<TResult>(Func<T, Result<TResult>> binder) =>
+        IsSuccess ? binder(Value) :
+        Exception != null ? Result<TResult>.Failure(Exception) : Result<TResult>.Failure(Error);
 
-    public Result ToResult()
-    {
-        return IsSuccess ? Result.Success() : Result.Failure(Error);
-    }
+    public async Task<Result<TResult>> BindAsync<TResult>(Func<T, Task<Result<TResult>>> binder) =>
+        IsSuccess ? await binder(Value) :
+        Exception != null ? Result<TResult>.Failure(Exception) : Result<TResult>.Failure(Error);
+
+    public Result ToResult() =>
+        IsSuccess ? Result.Success() :
+        Exception != null ? Result.Failure(Exception) : Result.Failure(Error);
 
     public Result<T> Tap(Action<T> action)
     {
-        if (IsSuccess)
-            action(Value);
-
+        if (IsSuccess) action(Value);
         return this;
     }
 
     public async Task<Result<T>> TapAsync(Func<T, Task> action)
     {
-        if (IsSuccess)
-            await action(Value);
-
+        if (IsSuccess) await action(Value);
         return this;
     }
 
-    public Result<T> Ensure(Func<T, bool> predicate, string error)
+    public Result<T> Ensure(Func<T, bool> predicate, string error) =>
+        IsFailure ? this : predicate(Value) ? this : Failure(error);
+
+    public Result<T> Ensure(Func<T, bool> predicate, Exception exception) =>
+        IsFailure ? this : predicate(Value) ? this : Failure(exception);
+
+    public async Task<Result<T>> EnsureAsync(Func<T, Task<bool>> predicate, string error)
     {
         if (IsFailure) return this;
-        return predicate(Value) ? this : Failure(error);
+        return await predicate(Value) ? this : Failure(error);
     }
 
-    public Result<T> Match(Action<T> onSuccess, Action<string> onFailure)
+    public async Task<Result<T>> EnsureAsync(Func<T, Task<bool>> predicate, Exception exception)
     {
-        if (IsSuccess)
-            onSuccess(Value);
-        else
-            onFailure(Error);
+        if (IsFailure) return this;
+        return await predicate(Value) ? this : Failure(exception);
+    }
 
+    // Pattern matching with exception support
+    public Result<T> Match(Action<T> onSuccess, Action<string, Exception?> onFailure)
+    {
+        if (IsSuccess) onSuccess(Value);
+        else onFailure(Error, Exception);
         return this;
     }
 
-    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<string, TResult> onFailure)
+    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<string, Exception?, TResult> onFailure) =>
+        IsSuccess ? onSuccess(Value) : onFailure(Error, Exception);
+
+    public async Task<Result<T>> MatchAsync(Func<T, Task> onSuccess, Func<string, Exception?, Task> onFailure)
     {
-        return IsSuccess ? onSuccess(Value) : onFailure(Error);
+        if (IsSuccess) await onSuccess(Value);
+        else await onFailure(Error, Exception);
+        return this;
     }
+
+    public async Task<TResult> MatchAsync<TResult>(
+        Func<T, Task<TResult>> onSuccess,
+        Func<string, Exception?, Task<TResult>> onFailure) =>
+        IsSuccess ? await onSuccess(Value) : await onFailure(Error, Exception);
+
+    // Pattern matching without exception for backward compatibility
+    public Result<T> Match(Action<T> onSuccess, Action<string> onFailure)
+    {
+        if (IsSuccess) onSuccess(Value);
+        else onFailure(Error);
+        return this;
+    }
+
+    public TResult Match<TResult>(Func<T, TResult> onSuccess, Func<string, TResult> onFailure) =>
+        IsSuccess ? onSuccess(Value) : onFailure(Error);
 }

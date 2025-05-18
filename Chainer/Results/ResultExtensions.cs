@@ -2,12 +2,11 @@ namespace Chainer.Results;
 
 public static class ResultExtensions
 {
-    public static Result<T> Flatten<T>(this Result<Result<T>> it)
-    {
-        return it.IsFailure ? Failure<T>(it.Error) : it.Value;
-    }
+    // Flatten nested results
+    public static Result<T> Flatten<T>(this Result<Result<T>> result) =>
+        result.IsFailure ? result.Exception != null ? Result<T>.Failure(result.Exception) : Result<T>.Failure(result.Error) : result.Value;
 
-    // Try methods - catch exceptions and convert to Result
+    // Try methods that catch exceptions
     public static Result Try(Action action)
     {
         try
@@ -17,7 +16,7 @@ public static class ResultExtensions
         }
         catch (Exception ex)
         {
-            return Result.Failure(ex.Message);
+            return Result.Failure(ex);
         }
     }
 
@@ -30,7 +29,7 @@ public static class ResultExtensions
         }
         catch (Exception ex)
         {
-            return Result.Failure(ex.Message);
+            return Result.Failure(ex);
         }
     }
 
@@ -38,11 +37,11 @@ public static class ResultExtensions
     {
         try
         {
-            return Result.Success(func());
+            return Result<T>.Success(func());
         }
         catch (Exception ex)
         {
-            return Result.Failure<T>(ex.Message);
+            return Result<T>.Failure(ex);
         }
     }
 
@@ -50,109 +49,52 @@ public static class ResultExtensions
     {
         try
         {
-            return Result.Success(await func());
+            return Result<T>.Success(await func());
         }
         catch (Exception ex)
         {
-            return Result.Failure<T>(ex.Message);
+            return Result<T>.Failure(ex);
         }
     }
 
-    // Create success Result directly
-    public static Result Success()
-    {
-        return Result.Success();
-    }
+    // Convenience methods for making code more readable
+    public static Result Success() => Result.Success();
+    public static Result<T> Success<T>(T value) => Result<T>.Success(value);
+    public static Result Failure(string error) => Result.Failure(error);
+    public static Result<T> Failure<T>(string error) => Result<T>.Failure(error);
+    public static Result Failure(Exception exception) => Result.Failure(exception);
+    public static Result<T> Failure<T>(Exception exception) => Result<T>.Failure(exception);
 
-    public static Result<T> Success<T>(T value)
-    {
-        return Result.Success(value);
-    }
-
-    // Create failure Result directly
-    public static Result Failure(string error)
-    {
-        return Result.Failure(error);
-    }
-
-    public static Result<T> Failure<T>(string error)
-    {
-        return Result.Failure<T>(error);
-    }
-
-    public static Result Failure(Exception exception)
-    {
-        return Result.Failure(exception.Message);
-    }
-
-    public static Result<T> Failure<T>(Exception exception)
-    {
-        return Result.Failure<T>(exception.Message);
-    }
-
-    // Existing extension methods
-    public static Result<TOut> OnSuccess<TIn, TOut>(this Result<TIn> result, Func<TIn, TOut> func)
-    {
-        return result.Map(func);
-    }
-
-    public static Result<TIn> OnSuccess<TIn>(this Result<TIn> result, Action<TIn> action)
-    {
-        return result.Tap(action);
-    }
-
-    public static Result<TIn> OnFailure<TIn>(this Result<TIn> result, Action<string> action)
-    {
-        if (result.IsFailure)
-            action(result.Error);
-
-        return result;
-    }
-
-    public static Result OnSuccess(this Result result, Action action)
-    {
-        if (result.IsSuccess)
-            action();
-
-        return result;
-    }
-
-    public static Result OnFailure(this Result result, Action<string> action)
-    {
-        if (result.IsFailure)
-            action(result.Error);
-
-        return result;
-    }
-
+    // Combine multiple results - preserving exceptions if possible
     public static Result<T> Combine<T>(this IEnumerable<Result<T>> results, Func<IEnumerable<T>, T> combiner)
     {
         var resultsList = results.ToList();
+        var failures = resultsList.Where(x => x.IsFailure).ToList();
 
-        var failures = resultsList
-            .Where(x => x.IsFailure)
-            .Select(x => x.Error)
-            .ToList();
+        if (failures.Count == 0) return Result<T>.Success(combiner(resultsList.Select(x => x.Value)));
+        {
+            // Try to find the first exception to preserve
+            var firstWithException = failures.FirstOrDefault(f => f.Exception != null);
+            if (firstWithException.IsFailure) return Result<T>.Failure(firstWithException.Exception!);
 
-        if (failures.Any())
-            return Result.Failure<T>(string.Join(", ", failures));
-
-        var values = resultsList.Select(x => x.Value);
-        return Result.Success(combiner(values));
+            // Otherwise return combined error messages
+            return Result<T>.Failure(string.Join(", ", failures.Select(x => x.Error)));
+        }
     }
 
     public static Result Combine(this IEnumerable<Result> results)
     {
         var resultsList = results.ToList();
+        var failures = resultsList.Where(x => x.IsFailure).ToList();
 
-        var failures = resultsList
-            .Where(x => x.IsFailure)
-            .Select(x => x.Error)
-            .ToList();
+        if (failures.Count == 0) return Result.Success();
+        {
+            // Try to find the first exception to preserve
+            var firstWithException = failures.FirstOrDefault(f => f.Exception != null);
+            if (firstWithException.IsFailure) return Result.Failure(firstWithException.Exception!);
 
-        if (failures.Any())
-            return Result.Failure(string.Join(", ", failures));
-
-        return Result.Success();
+            // Otherwise return combined error messages
+            return Result.Failure(string.Join(", ", failures.Select(x => x.Error)));
+        }
     }
 }
