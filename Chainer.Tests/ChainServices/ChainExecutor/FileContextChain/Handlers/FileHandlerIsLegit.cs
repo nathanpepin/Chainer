@@ -2,7 +2,7 @@ using Chainer.ChainServices;
 using Chainer.Results;
 using Microsoft.Extensions.Logging;
 
-namespace Chainer.Tests.FileContextChain.Handlers;
+namespace Chainer.Tests.ChainServices.ChainExecutor.FileContextChain.Handlers;
 
 public class FileHandlerIsLegit : IChainHandler<FileContext>
 {

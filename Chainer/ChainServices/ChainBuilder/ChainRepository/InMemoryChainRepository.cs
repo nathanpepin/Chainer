@@ -6,7 +6,7 @@ namespace Chainer.ChainServices.ChainBuilder.ChainRepository;
 
 public sealed class InMemoryChainRepository : IChainRepository
 {
-    public static readonly Guid DefaultChainGuid = new Guid("6ae8a81e-d7f0-43d2-9617-dfd4528b0c89");
+    public static readonly Guid DefaultChainGuid = new ("6ae8a81e-d7f0-43d2-9617-dfd4528b0c89");
 
     public ConcurrentDictionary<Guid, List<ChainMessage>> Messages { get; } = new();
     public ConcurrentDictionary<Guid, List<ChainExecutionLog>> ExecutionLogs { get; } = new();

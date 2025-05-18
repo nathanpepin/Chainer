@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Chainer.Tests.FileContextChain;
+namespace Chainer.Tests.ChainServices.ChainExecutor.FileContextChain;
 
 public class FileContext : ICloneable
 {

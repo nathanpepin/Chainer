@@ -1,9 +1,9 @@
 using Chainer.ChainServices;
-using Chainer.Tests.FileContextChain;
-using Chainer.Tests.FileContextChain.Handlers;
+using Chainer.Tests.ChainServices.ChainExecutor.FileContextChain;
+using Chainer.Tests.ChainServices.ChainExecutor.FileContextChain.Handlers;
 using FluentAssertions;
 
-namespace Chainer.Tests;
+namespace Chainer.Tests.ChainServices.ChainExecutor;
 
 public class ChainExecutorTests
 {

@@ -7,11 +7,13 @@ using Chainer.ChainServices.ChainBuilder.Messages;
 using Chainer.Results;
 using FakeItEasy;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Chainer.Tests.DynamicChainHandlers;
+namespace Chainer.Tests.ChainServices.ChainBuilder.DynamicChainHandler;
 
+[TestSubject(typeof(DynamicChainExecutor))]
 public sealed class DynamicChainExecutorTests
 {
     // Test context class
