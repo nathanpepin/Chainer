@@ -6,7 +6,7 @@ namespace Chainer.ChainServices.ChainBuilder.ChainRepository;
 
 public sealed class InMemoryChainRepository : IChainRepository
 {
-    public static readonly Guid DefaultChainGuid = new ("6ae8a81e-d7f0-43d2-9617-dfd4528b0c89");
+    public static readonly Guid DefaultChainGuid = new("6ae8a81e-d7f0-43d2-9617-dfd4528b0c89");
 
     public ConcurrentDictionary<Guid, List<ChainMessage>> Messages { get; } = new();
     public ConcurrentDictionary<Guid, List<ChainExecutionLog>> ExecutionLogs { get; } = new();
@@ -37,7 +37,13 @@ public sealed class InMemoryChainRepository : IChainRepository
 
     public Task<Result> SaveToDefaultChainMessagesAsync(IEnumerable<ChainMessage> messages, CancellationToken cancellationToken = default)
     {
-        return SaveChainMessagesAsync(DefaultChainGuid, messages, cancellationToken);
+        var chainMessages = messages as ChainMessage[] ?? messages.ToArray();
+        foreach (var message in chainMessages)
+        {
+            message.ChainId = DefaultChainGuid;
+        }
+
+        return SaveChainMessagesAsync(DefaultChainGuid, chainMessages, cancellationToken);
     }
 
     public Task<Result> SaveChainMessagesAsync(string chainId, IEnumerable<ChainMessage> messages, CancellationToken cancellationToken = default)

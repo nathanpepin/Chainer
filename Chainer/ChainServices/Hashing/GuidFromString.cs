@@ -27,8 +27,8 @@ internal static class GuidFromString
         // Set version (5) and variant bits
         hashBytes[6] = (byte)((hashBytes[6] & 0x0F) | 0x50);
         hashBytes[8] = (byte)((hashBytes[8] & 0x3F) | 0x80);
-
-        return new Guid(hashBytes);
+        
+        return new Guid(hashBytes[..16]);
     }
 
     private static void SwapByteOrder(byte[] guid)
