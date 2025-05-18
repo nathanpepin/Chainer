@@ -42,7 +42,7 @@ public sealed class DynamicChainExecutorTests
     {
         public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(Result.Failure<TestContext>("Deliberate failure"));
+            return Task.FromResult(Result<TestContext>.Failure("Deliberate failure"));
         }
     }
 
@@ -95,7 +95,7 @@ public sealed class DynamicChainExecutorTests
         };
 
         A.CallTo(() => repository.GetChainMessagesAsync(chainId, A<CancellationToken>._))
-            .Returns(Result.Success(messages));
+            .Returns(Result<List<ChainMessage>>.Success(messages));
 
         A.CallTo(() => serviceProvider.GetService(typeof(TestSuccessHandler)))
             .Returns(new TestSuccessHandler());
