@@ -1,7 +1,7 @@
 namespace Chainer.ChainServices.ChainBuilder.Messages;
 
 /// <summary>
-/// The state of a chain execution
+///     The state of a chain execution
 /// </summary>
 public enum ChainMessageStatus
 {

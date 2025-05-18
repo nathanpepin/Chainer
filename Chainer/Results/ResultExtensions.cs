@@ -3,8 +3,10 @@ namespace Chainer.Results;
 public static class ResultExtensions
 {
     // Flatten nested results
-    public static Result<T> Flatten<T>(this Result<Result<T>> result) =>
-        result.IsFailure ? result.Exception != null ? Result<T>.Failure(result.Exception) : Result<T>.Failure(result.Error) : result.Value;
+    public static Result<T> Flatten<T>(this Result<Result<T>> result)
+    {
+        return result.IsFailure ? result.Exception != null ? Result<T>.Failure(result.Exception) : Result<T>.Failure(result.Error) : result.Value;
+    }
 
     // Try methods that catch exceptions
     public static Result Try(Action action)
@@ -58,12 +60,35 @@ public static class ResultExtensions
     }
 
     // Convenience methods for making code more readable
-    public static Result Success() => Result.Success();
-    public static Result<T> Success<T>(T value) => Result<T>.Success(value);
-    public static Result Failure(string error) => Result.Failure(error);
-    public static Result<T> Failure<T>(string error) => Result<T>.Failure(error);
-    public static Result Failure(Exception exception) => Result.Failure(exception);
-    public static Result<T> Failure<T>(Exception exception) => Result<T>.Failure(exception);
+    public static Result Success()
+    {
+        return Result.Success();
+    }
+
+    public static Result<T> Success<T>(T value)
+    {
+        return Result<T>.Success(value);
+    }
+
+    public static Result Failure(string error)
+    {
+        return Result.Failure(error);
+    }
+
+    public static Result<T> Failure<T>(string error)
+    {
+        return Result<T>.Failure(error);
+    }
+
+    public static Result Failure(Exception exception)
+    {
+        return Result.Failure(exception);
+    }
+
+    public static Result<T> Failure<T>(Exception exception)
+    {
+        return Result<T>.Failure(exception);
+    }
 
     // Combine multiple results - preserving exceptions if possible
     public static Result<T> Combine<T>(this IEnumerable<Result<T>> results, Func<IEnumerable<T>, T> combiner)

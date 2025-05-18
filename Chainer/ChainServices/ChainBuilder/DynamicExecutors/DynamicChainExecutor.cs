@@ -24,10 +24,7 @@ public sealed class DynamicChainExecutor(
     {
         // Get chain messages
         var messagesResult = await repository.GetChainMessagesAsync(chainId, cancellationToken);
-        if (messagesResult.IsFailure)
-        {
-            return new DynamicChainExecutionResult<TContext>(Failure<TContext>(messagesResult.Error), []);
-        }
+        if (messagesResult.IsFailure) return new DynamicChainExecutionResult<TContext>(Failure<TContext>(messagesResult.Error), []);
 
         return await ExecuteChainAsync(messagesResult.Value, initialContext, cancellationToken);
     }
@@ -137,19 +134,13 @@ public sealed class DynamicChainExecutor(
     {
         // Get handler type
         var handlerType = TypeCache.GetOrAdd(message.HandlerTypeName, Type.GetType(message.HandlerTypeName));
-        if (handlerType is null)
-        {
-            return Failure<TContext>($"Handler type {message.HandlerTypeName} not found");
-        }
+        if (handlerType is null) return Failure<TContext>($"Handler type {message.HandlerTypeName} not found");
 
         // Get handler instance from DI or create new
         var handler = serviceProvider.GetService(handlerType) ??
                       ActivatorUtilities.CreateInstance(serviceProvider, handlerType);
 
-        if (handler is not IChainHandler<TContext> typedHandler)
-        {
-            return Failure<TContext>($"Handler {handlerType.Name} does not implement IChainHandler<{typeof(TContext).Name}>");
-        }
+        if (handler is not IChainHandler<TContext> typedHandler) return Failure<TContext>($"Handler {handlerType.Name} does not implement IChainHandler<{typeof(TContext).Name}>");
 
         await SaveBeforeContextDataIfNeeded(handler, context, log);
         ConfigureHandlerIfNeeded<TContext>(handler, message);
@@ -163,19 +154,13 @@ public sealed class DynamicChainExecutor(
 
     private static void SaveAfterContextDataIfNeeded<TContext>(ChainExecutionLog log, Result<TContext> result, object handler) where TContext : class, ICloneable, new()
     {
-        if (result.IsSuccess && handler is ISaveAfterContextData)
-        {
-            log.AfterJson = JsonSerializer.Serialize(result.Value);
-        }
+        if (result.IsSuccess && handler is ISaveAfterContextData) log.AfterJson = JsonSerializer.Serialize(result.Value);
     }
 
     private static Task SaveBeforeContextDataIfNeeded<TContext>(object handler, TContext context, ChainExecutionLog log)
         where TContext : class, ICloneable, new()
     {
-        if (handler is ISaveBeforeContextData)
-        {
-            log.BeforeJson = JsonSerializer.Serialize(context);
-        }
+        if (handler is ISaveBeforeContextData) log.BeforeJson = JsonSerializer.Serialize(context);
 
         return Task.CompletedTask;
     }
@@ -185,10 +170,7 @@ public sealed class DynamicChainExecutor(
         ChainMessage message)
         where TContext : class, ICloneable, new()
     {
-        if (handler is not IConfigurableChainHandler<TContext> configurableHandler || string.IsNullOrEmpty(message.ConfigurationJson))
-        {
-            return;
-        }
+        if (handler is not IConfigurableChainHandler<TContext> configurableHandler || string.IsNullOrEmpty(message.ConfigurationJson)) return;
 
         var configuration = HandlerConfiguration.FromJson(message.ConfigurationJson);
         configurableHandler.Configure(configuration);

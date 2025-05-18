@@ -17,10 +17,16 @@ public readonly struct Result : IResult
     public string Error { get; }
     public Exception? Exception { get; }
 
-    public override string ToString() => IsSuccess ? "Success" : $"Failure({Error})";
+    public override string ToString()
+    {
+        return IsSuccess ? "Success" : $"Failure({Error})";
+    }
 
     // Factory methods
-    public static Result Success() => new(true, string.Empty);
+    public static Result Success()
+    {
+        return new Result(true, string.Empty);
+    }
 
     public static Result Failure(string error)
     {
@@ -36,11 +42,15 @@ public readonly struct Result : IResult
     }
 
     // Conversions
-    public static implicit operator Result(bool success) =>
-        success ? Success() : Failure("Operation failed");
+    public static implicit operator Result(bool success)
+    {
+        return success ? Success() : Failure("Operation failed");
+    }
 
-    public static implicit operator Result(Exception exception) =>
-        Failure(exception);
+    public static implicit operator Result(Exception exception)
+    {
+        return Failure(exception);
+    }
 
     // Core methods that work with non-generic Result
     public Result Ensure(Func<bool> predicate, string error)

@@ -1,7 +1,7 @@
 namespace Chainer.ChainServices.ChainBuilder.Messages;
 
 /// <summary>
-/// Symbolizes a log of a chain's execution
+///     Symbolizes a log of a chain's execution
 /// </summary>
 public sealed class ChainExecutionLog
 {

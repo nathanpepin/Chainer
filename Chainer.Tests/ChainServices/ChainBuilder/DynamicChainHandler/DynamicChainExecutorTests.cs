@@ -16,63 +16,6 @@ namespace Chainer.Tests.ChainServices.ChainBuilder.DynamicChainHandler;
 [TestSubject(typeof(DynamicChainExecutor))]
 public sealed class DynamicChainExecutorTests
 {
-    // Test context class
-    private class TestContext : ICloneable
-    {
-        public string Value { get; set; } = "Initial";
-
-        public object Clone()
-        {
-            return new TestContext { Value = Value };
-        }
-    }
-
-// Test handler that succeeds
-    private class TestSuccessHandler : IChainHandler<TestContext>
-    {
-        public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
-        {
-            context.Value = "Success";
-            return Task.FromResult<Result<TestContext>>(context);
-        }
-    }
-
-// Test handler that fails
-    private class TestFailureHandler : IChainHandler<TestContext>
-    {
-        public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(Result<TestContext>.Failure("Deliberate failure"));
-        }
-    }
-
-// Test configurable handler
-    private class TestConfigurableHandler : IConfigurableChainHandler<TestContext>
-    {
-        private string _configValue = "Default";
-
-        public void Configure(IHandlerConfiguration configuration)
-        {
-            var config = configuration.Bind<TestHandlerConfig>();
-            if (config != null)
-            {
-                _configValue = config.ConfigValue;
-            }
-        }
-
-        public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
-        {
-            context.Value = _configValue;
-            return Task.FromResult<Result<TestContext>>(context);
-        }
-    }
-
-// Configuration class for the configurable handler
-    private class TestHandlerConfig
-    {
-        public string ConfigValue { get; set; } = "Configured";
-    }
-
     [Fact]
     public async Task ExecuteChainAsync_WhenGivenChainId_ShouldRetrieveMessagesAndExecuteChain()
     {
@@ -374,5 +317,59 @@ public sealed class DynamicChainExecutorTests
 
         result.ExecutionLogs[2].HandlerTypeName.Should().Be(typeof(TestSuccessHandler).AssemblyQualifiedName!);
         result.ExecutionLogs[2].Status.Should().Be(ChainMessageStatus.Skipped);
+    }
+
+    // Test context class
+    private class TestContext : ICloneable
+    {
+        public string Value { get; set; } = "Initial";
+
+        public object Clone()
+        {
+            return new TestContext { Value = Value };
+        }
+    }
+
+// Test handler that succeeds
+    private class TestSuccessHandler : IChainHandler<TestContext>
+    {
+        public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+        {
+            context.Value = "Success";
+            return Task.FromResult<Result<TestContext>>(context);
+        }
+    }
+
+// Test handler that fails
+    private class TestFailureHandler : IChainHandler<TestContext>
+    {
+        public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(Result<TestContext>.Failure("Deliberate failure"));
+        }
+    }
+
+// Test configurable handler
+    private class TestConfigurableHandler : IConfigurableChainHandler<TestContext>
+    {
+        private string _configValue = "Default";
+
+        public void Configure(IHandlerConfiguration configuration)
+        {
+            var config = configuration.Bind<TestHandlerConfig>();
+            if (config != null) _configValue = config.ConfigValue;
+        }
+
+        public Task<Result<TestContext>> Handle(TestContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+        {
+            context.Value = _configValue;
+            return Task.FromResult<Result<TestContext>>(context);
+        }
+    }
+
+// Configuration class for the configurable handler
+    private class TestHandlerConfig
+    {
+        public string ConfigValue { get; set; } = "Configured";
     }
 }

@@ -156,8 +156,8 @@ public sealed class InMemoryChainRepositoryTest
         await repository.UpdateChainExecutionLog(
             log,
             ChainMessageStatus.Completed,
-            beforeExecution: "{\"before\":\"data\"}",
-            afterExecution: "{\"after\":\"data\"}");
+            "{\"before\":\"data\"}",
+            "{\"after\":\"data\"}");
 
         var logs = await repository.GetChainExecutionLogs(chainId);
 

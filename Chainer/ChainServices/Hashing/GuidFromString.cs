@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Chainer.ChainServices.Hashing;
@@ -7,9 +8,9 @@ internal static class GuidFromString
     public static Guid CreateDeterministicGuid(string input)
     {
         // Use DNS namespace as default namespace
-        Guid namespaceGuid = new Guid("6ba7b810-9dad-11d1-80b4-00c04fd430c8");
+        var namespaceGuid = new Guid("6ba7b810-9dad-11d1-80b4-00c04fd430c8");
 
-        using var algorithm = System.Security.Cryptography.SHA1.Create();
+        using var algorithm = SHA1.Create();
         var namespaceBytes = namespaceGuid.ToByteArray();
         var inputBytes = Encoding.UTF8.GetBytes(input);
 
@@ -27,7 +28,7 @@ internal static class GuidFromString
         // Set version (5) and variant bits
         hashBytes[6] = (byte)((hashBytes[6] & 0x0F) | 0x50);
         hashBytes[8] = (byte)((hashBytes[8] & 0x3F) | 0x80);
-        
+
         return new Guid(hashBytes[..16]);
     }
 

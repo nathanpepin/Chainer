@@ -1,7 +1,7 @@
 namespace Chainer.ChainServices.ChainBuilder.Messages;
 
 /// <summary>
-/// A storable chain link
+///     A storable chain link
 /// </summary>
 public sealed class ChainMessage
 {

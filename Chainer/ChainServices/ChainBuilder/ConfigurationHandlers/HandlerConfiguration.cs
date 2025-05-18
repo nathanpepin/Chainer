@@ -6,8 +6,6 @@ namespace Chainer.ChainServices.ChainBuilder.ConfigurationHandlers;
 
 public sealed class HandlerConfiguration : IHandlerConfiguration
 {
-    public HandlerConfigurationType ConfigurationType { get; private set; } = HandlerConfigurationType.NotSet;
-
     private IDictionary<string, object?>? _dictionaryData;
     private string? _jsonData;
     private object? _objectData;
@@ -18,25 +16,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
         SetConfiguration(value, type);
     }
 
-    public static IHandlerConfiguration FromObject(object value)
-    {
-        return new HandlerConfiguration(value, HandlerConfigurationType.Object);
-    }
-
-    public static IHandlerConfiguration FromJson(string json)
-    {
-        return new HandlerConfiguration(json, HandlerConfigurationType.Json);
-    }
-
-    public static IHandlerConfiguration FromDictionary(IDictionary<string, object?> dictionary)
-    {
-        return new HandlerConfiguration(dictionary, HandlerConfigurationType.Dictionary);
-    }
-
-    public static IHandlerConfiguration FromXml(string xml)
-    {
-        return new HandlerConfiguration(xml, HandlerConfigurationType.Xml);
-    }
+    public HandlerConfigurationType ConfigurationType { get; private set; } = HandlerConfigurationType.NotSet;
 
     public void SetConfiguration(object? value, HandlerConfigurationType type)
     {
@@ -114,10 +94,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
 
     public T? Bind<T>() where T : class, new()
     {
-        if (TryBind<T>(out var result))
-        {
-            return result;
-        }
+        if (TryBind<T>(out var result)) return result;
 
         return new T(); // Return a default instance if binding fails
     }
@@ -136,7 +113,8 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
                         result = typedObject;
                         return true;
                     }
-                    else if (_objectData != null)
+
+                    if (_objectData != null)
                     {
                         // Try to convert via JSON serialization/deserialization
                         var json = JsonSerializer.Serialize(_objectData);
@@ -196,6 +174,26 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
         }
     }
 
+    public static IHandlerConfiguration FromObject(object value)
+    {
+        return new HandlerConfiguration(value, HandlerConfigurationType.Object);
+    }
+
+    public static IHandlerConfiguration FromJson(string json)
+    {
+        return new HandlerConfiguration(json, HandlerConfigurationType.Json);
+    }
+
+    public static IHandlerConfiguration FromDictionary(IDictionary<string, object?> dictionary)
+    {
+        return new HandlerConfiguration(dictionary, HandlerConfigurationType.Dictionary);
+    }
+
+    public static IHandlerConfiguration FromXml(string xml)
+    {
+        return new HandlerConfiguration(xml, HandlerConfigurationType.Xml);
+    }
+
     private T DictionaryToObject<T>(IDictionary<string, object?> dictionary) where T : class, new()
     {
         var instance = new T();
@@ -210,10 +208,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
             try
             {
                 var value = ConvertValue(entry.Value, property.PropertyType);
-                if (value != null || Nullable.GetUnderlyingType(property.PropertyType) != null)
-                {
-                    property.SetValue(instance, value);
-                }
+                if (value != null || Nullable.GetUnderlyingType(property.PropertyType) != null) property.SetValue(instance, value);
             }
             catch
             {
@@ -227,11 +222,9 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
     private object? ConvertValue(object? value, Type targetType)
     {
         if (value == null)
-        {
             return targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null
                 ? Activator.CreateInstance(targetType)
                 : null;
-        }
 
         // If value is already the target type, return it
         if (targetType.IsInstanceOfType(value))
@@ -239,10 +232,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
 
         // Handle nullable types
         var underlyingType = Nullable.GetUnderlyingType(targetType);
-        if (underlyingType != null)
-        {
-            targetType = underlyingType;
-        }
+        if (underlyingType != null) targetType = underlyingType;
 
         switch (value)
         {
@@ -262,10 +252,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
                     try
                     {
                         var convertedValue = ConvertValue(entry.Value, property.PropertyType);
-                        if (convertedValue != null || Nullable.GetUnderlyingType(property.PropertyType) != null)
-                        {
-                            property.SetValue(nestedObj, convertedValue);
-                        }
+                        if (convertedValue != null || Nullable.GetUnderlyingType(property.PropertyType) != null) property.SetValue(nestedObj, convertedValue);
                     }
                     catch
                     {
@@ -284,10 +271,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
                 foreach (var item in listValue)
                 {
                     var convertedItem = ConvertValue(item, elementType);
-                    if (convertedItem != null || Nullable.GetUnderlyingType(elementType) == null)
-                    {
-                        targetList.Add(convertedItem);
-                    }
+                    if (convertedItem != null || Nullable.GetUnderlyingType(elementType) == null) targetList.Add(convertedItem);
                 }
 
                 return targetList;
@@ -309,15 +293,13 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
         {
             // Handle enum conversions
             if (targetType.IsEnum)
-            {
                 switch (value)
                 {
                     case string strValue:
-                        return Enum.Parse(targetType, strValue, ignoreCase: true);
+                        return Enum.Parse(targetType, strValue, true);
                     case IConvertible numValue:
                         return Enum.ToObject(targetType, Convert.ToInt32(numValue));
                 }
-            }
 
             // Handle TimeSpan
             if (targetType == typeof(TimeSpan))
@@ -330,16 +312,11 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
 
             // Handle DateTime
             if (targetType == typeof(DateTime))
-            {
                 if (value is string s && DateTime.TryParse(s, out var dateTime))
                     return dateTime;
-            }
 
             // Try standard conversion
-            if (value is IConvertible)
-            {
-                return Convert.ChangeType(value, targetType);
-            }
+            if (value is IConvertible) return Convert.ChangeType(value, targetType);
         }
         catch
         {
@@ -350,10 +327,7 @@ public sealed class HandlerConfiguration : IHandlerConfiguration
         try
         {
             var stringValue = value.ToString();
-            if (stringValue != null)
-            {
-                return Convert.ChangeType(stringValue, targetType);
-            }
+            if (stringValue != null) return Convert.ChangeType(stringValue, targetType);
         }
         catch
         {
