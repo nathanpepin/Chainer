@@ -8,7 +8,7 @@ public interface IDynamicChainExecutor
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new();
-    
+
     Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         string friendlyName,
         TContext? initialContext = null,

@@ -13,7 +13,7 @@ public static class BindFromIConfiguration
     private static readonly JsonSerializerOptions JsonSerializerOptions = new() { WriteIndented = false };
 
     /// <summary>
-    /// Binds a section from IConfiguration to a dynamic chain and registers it with the chain repository.
+    ///     Binds a section from IConfiguration to a dynamic chain and registers it with the chain repository.
     /// </summary>
     /// <param name="services">The service collection to register services with</param>
     /// <param name="configuration">The configuration source</param>
@@ -25,10 +25,7 @@ public static class BindFromIConfiguration
 
         var section = configuration.GetSection(configKey);
 
-        if (!section.Exists())
-        {
-            throw new InvalidOperationException($"Configuration section '{configKey}' not found");
-        }
+        if (!section.Exists()) throw new InvalidOperationException($"Configuration section '{configKey}' not found");
 
         var chainMessages = DeserializeMessages(section, configKey);
 
@@ -58,26 +55,18 @@ public static class BindFromIConfiguration
             // Handle the Configuration section as native JSON
             var configSection = messageConfig.GetSection("Configuration");
             if (configSection.Exists() && configSection.GetChildren().Any())
-            {
                 // Convert the configuration section to a JSON string
-
                 message.ConfigurationJson = JsonSerializer.Serialize(
                     ConvertConfigurationToObject(configSection), JsonSerializerOptions
                 );
-            }
             else
-            {
                 // Fallback to the old ConfigurationJson property if provided
                 message.ConfigurationJson = messageConfig["ConfigurationJson"];
-            }
 
             chainMessages.Add(message);
         }
 
-        if (chainMessages.Count == 0)
-        {
-            throw new InvalidOperationException($"No chain messages found in configuration section '{configKey}'");
-        }
+        if (chainMessages.Count == 0) throw new InvalidOperationException($"No chain messages found in configuration section '{configKey}'");
 
         return chainMessages;
     }
@@ -86,29 +75,21 @@ public static class BindFromIConfiguration
     private static object ConvertConfigurationToObject(IConfigurationSection section)
     {
         if (!section.GetChildren().Any())
-        {
             // This is a leaf node
             return section.Value;
-        }
 
         // Check if this is an array
         if (section.GetChildren().All(c => int.TryParse(c.Key, out _)))
         {
             var list = new List<object>();
-            foreach (var child in section.GetChildren().OrderBy(c => int.Parse(c.Key)))
-            {
-                list.Add(ConvertConfigurationToObject(child));
-            }
+            foreach (var child in section.GetChildren().OrderBy(c => int.Parse(c.Key))) list.Add(ConvertConfigurationToObject(child));
 
             return list;
         }
 
         // This is an object
         var dict = new Dictionary<string, object>();
-        foreach (var child in section.GetChildren())
-        {
-            dict[child.Key] = ConvertConfigurationToObject(child);
-        }
+        foreach (var child in section.GetChildren()) dict[child.Key] = ConvertConfigurationToObject(child);
 
         return dict;
     }
@@ -121,10 +102,7 @@ public static class BindFromIConfiguration
             message.FriendlyName = name;
 
             // Generate a new ID for each message if not already set
-            if (message.Id == Guid.Empty)
-            {
-                message.Id = Guid.NewGuid();
-            }
+            if (message.Id == Guid.Empty) message.Id = Guid.NewGuid();
 
             services.AddSingleton(message);
         }
@@ -141,10 +119,7 @@ public static class BindFromIConfiguration
 
             var inMemoryChainRepository = new InMemoryChainRepository();
 
-            foreach (var message in registeredMessages)
-            {
-                inMemoryChainRepository.SaveChainMessagesAsync(message.Key, message).Wait(); //Ok to wait because its synchronous anyway
-            }
+            foreach (var message in registeredMessages) inMemoryChainRepository.SaveChainMessagesAsync(message.Key, message).Wait(); //Ok to wait because its synchronous anyway
 
             return inMemoryChainRepository;
         });

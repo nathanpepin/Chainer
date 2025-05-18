@@ -45,10 +45,7 @@ void WriteResult(DynamicChainExecutionResult<FileContext> dynamicChainExecutionR
 
         // Display the execution logs
         Console.WriteLine("\nExecution Logs:");
-        foreach (var log in dynamicChainExecutionResult.ExecutionLogs)
-        {
-            Console.WriteLine($"- {log.HandlerTypeName.Split(',')[0].Split('.').Last()}: {log.Status}");
-        }
+        foreach (var log in dynamicChainExecutionResult.ExecutionLogs) Console.WriteLine($"- {log.HandlerTypeName.Split(',')[0].Split('.').Last()}: {log.Status}");
     }
     else
     {
