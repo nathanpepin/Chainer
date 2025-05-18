@@ -6,14 +6,14 @@ namespace Chainer.ChainServices.ChainBuilder.ChainRepository;
 
 public sealed class InMemoryChainRepository : IChainRepository
 {
-    private Guid DefaultChain = Guid.NewGuid();
+    public static readonly Guid DefaultChainGuid = new Guid("6ae8a81e-d7f0-43d2-9617-dfd4528b0c89");
 
     public ConcurrentDictionary<Guid, List<ChainMessage>> Messages { get; } = new();
     public ConcurrentDictionary<Guid, List<ChainExecutionLog>> ExecutionLogs { get; } = new();
 
     public Task<Result<List<ChainMessage>>> GetDefaultChainMessagesAsync(CancellationToken cancellationToken = default)
     {
-        return GetChainMessagesAsync(DefaultChain, cancellationToken);
+        return GetChainMessagesAsync(DefaultChainGuid, cancellationToken);
     }
 
     public Task<Result<List<ChainMessage>>> GetChainMessagesAsync(string chainId, CancellationToken cancellationToken = default)
@@ -37,7 +37,7 @@ public sealed class InMemoryChainRepository : IChainRepository
 
     public Task<Result> SaveToDefaultChainMessagesAsync(IEnumerable<ChainMessage> messages, CancellationToken cancellationToken = default)
     {
-        return SaveChainMessagesAsync(DefaultChain, messages, cancellationToken);
+        return SaveChainMessagesAsync(DefaultChainGuid, messages, cancellationToken);
     }
 
     public Task<Result> SaveChainMessagesAsync(string chainId, IEnumerable<ChainMessage> messages, CancellationToken cancellationToken = default)
@@ -96,17 +96,16 @@ public sealed class InMemoryChainRepository : IChainRepository
         }
     }
 
-    // Since it is in memory and the ChainExecutionLog is a class, no need to update anything
     public Task<Result> UpdateChainExecutionLog(
         ChainExecutionLog chainExecutionLog,
         ChainMessageStatus status,
         CancellationToken cancellationToken = default)
     {
+        chainExecutionLog.Status = status;
         return Task.FromResult(Success());
     }
 
 
-    // Since it is in memory and the ChainExecutionLog is a class, no need to update anything
     public Task<Result> UpdateChainExecutionLog(
         ChainExecutionLog chainExecutionLog,
         ChainMessageStatus status,
@@ -114,7 +113,20 @@ public sealed class InMemoryChainRepository : IChainRepository
         string afterExecution,
         CancellationToken cancellationToken = default)
     {
+        chainExecutionLog.Status = status;
+        chainExecutionLog.BeforeJson = beforeExecution;
+        chainExecutionLog.AfterJson = afterExecution;
         return Task.FromResult(Success());
+    }
+
+    public Task<List<ChainExecutionLog>> GetChainExecutionLogs(Guid chainId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ExecutionLogs.TryGetValue(chainId, out var logs) ? logs : []);
+    }
+
+    public Task<List<ChainExecutionLog>> GetDefaultChainExecutionLogs(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(ExecutionLogs.TryGetValue(DefaultChainGuid, out var logs) ? logs : []);
     }
 
     // Since it is in memory and the ChainExecutionLog is a class, no need to update anything

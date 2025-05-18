@@ -105,8 +105,8 @@ public sealed class DynamicChainExecutorTests
         var result = await executor.ExecuteChainAsync(chainId, context);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Value.Should().Be("Success");
+        result.Context.IsSuccess.Should().BeTrue();
+        result.Context.Value.Value.Should().Be("Success");
         A.CallTo(() => repository.GetChainMessagesAsync(chainId, A<CancellationToken>._))
             .MustHaveHappenedOnceExactly();
     }
@@ -141,63 +141,70 @@ public sealed class DynamicChainExecutorTests
         var result = await executor.ExecuteChainAsync(messages, context);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be("Deliberate failure");
+        result.Context.IsFailure.Should().BeTrue();
+        result.Context.Error.Should().Be("Deliberate failure");
     }
 
     [Fact]
     public async Task ExecuteChainAsync_WithMultipleHandlers_ShouldExecuteInOrder()
     {
         // Arrange
-        var repository = A.Fake<IChainRepository>();
+        var repository = new InMemoryChainRepository();
         var serviceProvider = A.Fake<IServiceProvider>();
         var logger = A.Fake<ILogger<DynamicChainExecutor>>();
 
-        // Create a custom handler to track execution order
-        var executionOrder = new List<int>();
+        var chainId = Guid.NewGuid();
 
-        var handler1 = A.Fake<IChainHandler<TestContext>>();
-        A.CallTo(() => handler1.Handle(A<TestContext>._, A<ILogger>._, A<CancellationToken>._))
-            .Invokes(() => executionOrder.Add(1))
-            .Returns(Result.Success(new TestContext { Value = "Handler1" }));
-
-        var handler2 = A.Fake<IChainHandler<TestContext>>();
-        A.CallTo(() => handler2.Handle(A<TestContext>._, A<ILogger>._, A<CancellationToken>._))
-            .Invokes(() => executionOrder.Add(2))
-            .Returns(Result.Success(new TestContext { Value = "Handler2" }));
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var id3 = Guid.NewGuid();
 
         var messages = new List<ChainMessage>
         {
             new()
             {
-                Id = Guid.NewGuid(),
-                ChainId = Guid.NewGuid(),
-                HandlerTypeName = "Handler1",
-                ExecutionOrder = 2, // Note: higher execution order but should run second
+                Id = id3,
+                ChainId = chainId,
+                HandlerTypeName = typeof(TestSuccessHandler).AssemblyQualifiedName!,
+                ExecutionOrder = 3,
                 ContextTypeName = typeof(TestContext).AssemblyQualifiedName!
             },
             new()
             {
-                Id = Guid.NewGuid(),
-                ChainId = Guid.NewGuid(),
-                HandlerTypeName = "Handler2",
-                ExecutionOrder = 1, // Lower execution order but should run first
+                Id = id1,
+                ChainId = chainId,
+                HandlerTypeName = typeof(TestFailureHandler).AssemblyQualifiedName!,
+                ExecutionOrder = 1,
+                ContextTypeName = typeof(TestContext).AssemblyQualifiedName!
+            },
+            new()
+            {
+                Id = id2,
+                ChainId = chainId,
+                HandlerTypeName = typeof(TestSuccessHandler).AssemblyQualifiedName!,
+                ExecutionOrder = 2,
                 ContextTypeName = typeof(TestContext).AssemblyQualifiedName!
             }
         };
 
-        A.CallTo(() => serviceProvider.GetService(A<Type>.That.Matches(t => t.Name == "Handler1")))
-            .Returns(handler1);
-        A.CallTo(() => serviceProvider.GetService(A<Type>.That.Matches(t => t.Name == "Handler2")))
-            .Returns(handler2);
+        A.CallTo(() => serviceProvider.GetService(typeof(TestSuccessHandler))).Returns(new TestSuccessHandler());
+        A.CallTo(() => serviceProvider.GetService(typeof(TestFailureHandler))).Returns(new TestFailureHandler());
 
         var executor = new DynamicChainExecutor(repository, serviceProvider, logger);
 
         // Act
-        _ = await executor.ExecuteChainAsync(messages, new TestContext());
+        var result = await executor.ExecuteChainAsync(messages, new TestContext());
 
         // Assert
-        executionOrder.Should().Equal(2, 1); // Handler2 (order 1) should execute before Handler1 (order 2)
+        result.Context.IsFailure.Should().BeTrue();
+        result.Context.Error.Should().Be("Deliberate failure");
+
+        // Verify logging to execution log
+        result.ExecutionLogs.Should().HaveCount(3);
+
+        result.ExecutionLogs[0].Id.Should().Be(id1);
+        result.ExecutionLogs[1].Id.Should().Be(id2);
+        result.ExecutionLogs[2].Id.Should().Be(id3);
     }
 
     [Fact]
@@ -234,8 +241,8 @@ public sealed class DynamicChainExecutorTests
         var result = await executor.ExecuteChainAsync(messages, context);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Value.Should().Be("ConfiguredValue");
+        result.Context.IsSuccess.Should().BeTrue();
+        result.Context.Value.Value.Should().Be("ConfiguredValue");
     }
 
     [Fact]
@@ -265,8 +272,8 @@ public sealed class DynamicChainExecutorTests
         var result = await executor.ExecuteChainAsync(messages, context);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("not found");
+        result.Context.IsFailure.Should().BeTrue();
+        result.Context.Error.Should().Contain("not found");
     }
 
     [Fact]
@@ -274,23 +281,12 @@ public sealed class DynamicChainExecutorTests
     {
         // Arrange
         var repository = A.Fake<IChainRepository>();
-        var serviceProvider = A.Fake<IServiceProvider>();
         var logger = A.Fake<ILogger<DynamicChainExecutor>>();
 
-        // Return null from GetService to force creation via ActivatorUtilities
-        A.CallTo(() => serviceProvider.GetService(typeof(TestSuccessHandler))).Returns(null);
-
-        // Need to set up a scope factory for ActivatorUtilities
-        var scopeFactory = A.Fake<IServiceScopeFactory>();
-        var scope = A.Fake<IServiceScope>();
-        var scopedProvider = A.Fake<IServiceProvider>();
-
-        A.CallTo(() => serviceProvider.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactory);
-        A.CallTo(() => scopeFactory.CreateScope()).Returns(scope);
-        A.CallTo(() => scope.ServiceProvider).Returns(scopedProvider);
-
-        // Return handler from scoped provider
-        A.CallTo(() => scopedProvider.GetService(typeof(TestSuccessHandler))).Returns(new TestSuccessHandler());
+        // Create a real service provider with minimal services
+        //Doing this because FakeItEasy has a hard time with null castings
+        var services = new ServiceCollection();
+        var serviceProvider = services.BuildServiceProvider();
 
         var messages = new List<ChainMessage>
         {
@@ -311,61 +307,50 @@ public sealed class DynamicChainExecutorTests
         var result = await executor.ExecuteChainAsync(messages, context);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Value.Should().Be("Success");
+        result.Context.IsSuccess.Should().BeTrue();
+        result.Context.Value.Value.Should().Be("Success");
     }
 
     [Fact]
     public async Task ExecuteChainAsync_WithFailureInChain_ShouldSkipRemainingHandlers()
     {
         // Arrange
-        var repository = A.Fake<IChainRepository>();
+        var repository = new InMemoryChainRepository();
         var serviceProvider = A.Fake<IServiceProvider>();
         var logger = A.Fake<ILogger<DynamicChainExecutor>>();
 
-        // First handler succeeds
-        var handler1 = new TestSuccessHandler();
-
-        // Second handler fails
-        var handler2 = new TestFailureHandler();
-
-        // Third handler should be skipped
-        var handler3 = A.Fake<IChainHandler<TestContext>>();
+        var chainId = Guid.NewGuid();
 
         var messages = new List<ChainMessage>
         {
             new()
             {
                 Id = Guid.NewGuid(),
-                ChainId = Guid.NewGuid(),
-                HandlerTypeName = "Handler1",
+                ChainId = chainId,
+                HandlerTypeName = typeof(TestSuccessHandler).AssemblyQualifiedName!,
                 ExecutionOrder = 1,
                 ContextTypeName = typeof(TestContext).AssemblyQualifiedName!
             },
             new()
             {
                 Id = Guid.NewGuid(),
-                ChainId = Guid.NewGuid(),
-                HandlerTypeName = "Handler2",
+                ChainId = chainId,
+                HandlerTypeName = typeof(TestFailureHandler).AssemblyQualifiedName!,
                 ExecutionOrder = 2,
                 ContextTypeName = typeof(TestContext).AssemblyQualifiedName!
             },
             new()
             {
                 Id = Guid.NewGuid(),
-                ChainId = Guid.NewGuid(),
-                HandlerTypeName = "Handler3",
+                ChainId = chainId,
+                HandlerTypeName = typeof(TestSuccessHandler).AssemblyQualifiedName!,
                 ExecutionOrder = 3,
                 ContextTypeName = typeof(TestContext).AssemblyQualifiedName!
             }
         };
 
-        A.CallTo(() => serviceProvider.GetService(A<Type>.That.Matches(t => t.Name == "Handler1")))
-            .Returns(handler1);
-        A.CallTo(() => serviceProvider.GetService(A<Type>.That.Matches(t => t.Name == "Handler2")))
-            .Returns(handler2);
-        A.CallTo(() => serviceProvider.GetService(A<Type>.That.Matches(t => t.Name == "Handler3")))
-            .Returns(handler3);
+        A.CallTo(() => serviceProvider.GetService(typeof(TestSuccessHandler))).Returns(new TestSuccessHandler());
+        A.CallTo(() => serviceProvider.GetService(typeof(TestFailureHandler))).Returns(new TestFailureHandler());
 
         var executor = new DynamicChainExecutor(repository, serviceProvider, logger);
 
@@ -373,18 +358,19 @@ public sealed class DynamicChainExecutorTests
         var result = await executor.ExecuteChainAsync(messages, new TestContext());
 
         // Assert
-        result.IsFailure.Should().BeTrue();
-        result.Error.Should().Be("Deliberate failure");
-
-        // Make sure the third handler wasn't called
-        A.CallTo(() => handler3.Handle(A<TestContext>._, A<ILogger>._, A<CancellationToken>._))
-            .MustNotHaveHappened();
+        result.Context.IsFailure.Should().BeTrue();
+        result.Context.Error.Should().Be("Deliberate failure");
 
         // Verify logging to execution log
-        A.CallTo(() => repository.UpdateChainExecutionLog(
-                A<ChainExecutionLog>.That.Matches(log => log.HandlerTypeName == "Handler3"),
-                ChainMessageStatus.Skipped,
-                A<CancellationToken>._))
-            .MustHaveHappenedOnceExactly();
+        result.ExecutionLogs.Should().HaveCount(3);
+
+        result.ExecutionLogs[0].HandlerTypeName.Should().Be(typeof(TestSuccessHandler).AssemblyQualifiedName!);
+        result.ExecutionLogs[0].Status.Should().Be(ChainMessageStatus.Completed);
+
+        result.ExecutionLogs[1].HandlerTypeName.Should().Be(typeof(TestFailureHandler).AssemblyQualifiedName!);
+        result.ExecutionLogs[1].Status.Should().Be(ChainMessageStatus.Failed);
+
+        result.ExecutionLogs[2].HandlerTypeName.Should().Be(typeof(TestSuccessHandler).AssemblyQualifiedName!);
+        result.ExecutionLogs[2].Status.Should().Be(ChainMessageStatus.Skipped);
     }
 }

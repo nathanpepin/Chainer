@@ -16,7 +16,7 @@ public sealed class DynamicChainExecutor(
 {
     private static readonly ConcurrentDictionary<string, Type?> TypeCache = new();
 
-    public async Task<Result<TContext>> ExecuteChainAsync<TContext>(
+    public async Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         Guid chainId,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
@@ -24,12 +24,15 @@ public sealed class DynamicChainExecutor(
     {
         // Get chain messages
         var messagesResult = await repository.GetChainMessagesAsync(chainId, cancellationToken);
-        if (messagesResult.IsFailure) return Failure<TContext>(messagesResult.Error);
+        if (messagesResult.IsFailure)
+        {
+            return new DynamicChainExecutionResult<TContext>(Failure<TContext>(messagesResult.Error), []);
+        }
 
         return await ExecuteChainAsync(messagesResult.Value, initialContext, cancellationToken);
     }
 
-    public async Task<Result<TContext>> ExecuteChainAsync<TContext>(
+    public async Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         IEnumerable<ChainMessage> chainMessages,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
@@ -43,9 +46,15 @@ public sealed class DynamicChainExecutor(
             context,
             cancellationToken);
 
-        return success
+        var contextResult = success
             ? Success(resultContext)
             : Failure<TContext>(errorMessage);
+
+        var messages = orderedMessages
+            .Select(x => x.ExecutionLog)
+            .ToImmutableArray();
+
+        return new DynamicChainExecutionResult<TContext>(contextResult, messages);
     }
 
     private static ImmutableArray<ExecutionItem> PrepareOrderedExecutionItems(IEnumerable<ChainMessage> chainMessages)
@@ -66,6 +75,8 @@ public sealed class DynamicChainExecutor(
     {
         var errorState = false;
         var errorMessage = string.Empty;
+
+        await repository.SaveChainExecutionLogs(executionItems.Select(x => x.ExecutionLog), cancellationToken);
 
         foreach (var item in executionItems)
         {
@@ -125,7 +136,7 @@ public sealed class DynamicChainExecutor(
         where TContext : class, ICloneable, new()
     {
         // Get handler type
-        var handlerType = TypeCache.GetOrAdd(message.HandlerTypeName, Type.GetType);
+        var handlerType = TypeCache.GetOrAdd(message.HandlerTypeName, Type.GetType(message.HandlerTypeName));
         if (handlerType is null)
         {
             return Failure<TContext>($"Handler type {message.HandlerTypeName} not found");
