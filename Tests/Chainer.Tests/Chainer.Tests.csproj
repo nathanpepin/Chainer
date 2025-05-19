@@ -28,7 +28,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Chainer\Chainer.csproj"/>
+        <ProjectReference Include="..\..\Source\Chainer\Chainer.csproj"/>
     </ItemGroup>
+
 
 </Project>
