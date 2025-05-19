@@ -22,7 +22,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Source\Chainer\Chainer.csproj"/>
-        <ProjectReference Include="..\..\Source\Chainer.SourceGen\Chainer.SourceGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\..\Source\Chainer.SourceGen\Chainer.SourceGen.csproj"/>
     </ItemGroup>
 
 </Project>
