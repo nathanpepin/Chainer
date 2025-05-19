@@ -1,9 +1,9 @@
 using System.Text.Json;
-using Chainer.ChainServices;
-using Chainer.ChainServices.ChainBuilder.ChainRepository;
-using Chainer.ChainServices.ChainBuilder.ConfigurationHandlers;
-using Chainer.ChainServices.ChainBuilder.DynamicExecutors;
-using Chainer.ChainServices.ChainBuilder.Messages;
+using Chainer.Building.Configuration;
+using Chainer.Building.DynamicExecutors;
+using Chainer.Building.Messages;
+using Chainer.Building.Repository;
+using Chainer.Core;
 using Chainer.Results;
 using FakeItEasy;
 using FluentAssertions;

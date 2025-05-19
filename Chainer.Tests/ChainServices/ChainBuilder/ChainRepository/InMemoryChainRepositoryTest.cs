@@ -1,5 +1,5 @@
-using Chainer.ChainServices.ChainBuilder.ChainRepository;
-using Chainer.ChainServices.ChainBuilder.Messages;
+using Chainer.Building.Messages;
+using Chainer.Building.Repository;
 using FluentAssertions;
 using JetBrains.Annotations;
 

@@ -1,5 +1,0 @@
-namespace Chainer.ChainServices.ChainBuilder.ConfigurationHandlers;
-
-public interface ISaveBeforeContextData;
-
-public interface ISaveAfterContextData;

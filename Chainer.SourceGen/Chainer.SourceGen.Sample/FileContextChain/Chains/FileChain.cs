@@ -1,5 +1,6 @@
 using System;
 using Chainer.ChainServices;
+using Chainer.Core;
 using Chainer.SourceGen.Sample.FileContextChain.Handlers;
 using Microsoft.Extensions.Logging;
 

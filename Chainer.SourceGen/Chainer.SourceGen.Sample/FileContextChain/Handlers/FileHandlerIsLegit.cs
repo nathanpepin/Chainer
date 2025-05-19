@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Chainer.ChainServices;
+using Chainer.Core;
 using Chainer.Results;
 using Microsoft.Extensions.Logging;
 

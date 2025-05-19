@@ -1,4 +1,4 @@
-using Chainer.ChainServices;
+using Chainer.Core;
 using Chainer.Tests.ChainServices.ChainExecutor.FileContextChain.Handlers;
 using Microsoft.Extensions.Logging;
 

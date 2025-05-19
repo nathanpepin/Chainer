@@ -1,4 +1,4 @@
-using Chainer.ChainServices.ChainBuilder.ChainRepository;
+using Chainer.Building.Repository;
 using JetBrains.Annotations;
 
 namespace Chainer.SourceGen.Tests.ChainServices.ChainBuilder.ChainRepository;

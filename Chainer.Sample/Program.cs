@@ -1,5 +1,5 @@
-﻿using Chainer.ChainServices.ChainBuilder.DynamicExecutors;
-using Chainer.Registrations;
+﻿using Chainer.Building.DynamicExecutors;
+using Chainer.Registration;
 using Chainer.Sample.FileContextChain;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

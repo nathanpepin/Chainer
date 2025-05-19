@@ -1,4 +1,4 @@
-using Chainer.ChainServices;
+using Chainer.Core;
 using Chainer.Results;
 using Microsoft.Extensions.Logging;
 
