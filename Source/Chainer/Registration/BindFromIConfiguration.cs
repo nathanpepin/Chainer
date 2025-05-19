@@ -10,6 +10,44 @@ namespace Chainer.Registration;
 
 public static class BindFromIConfiguration
 {
+    /// <summary>
+    /// A dictionary used to store mappings between simple keys and the fully qualified assembly names of context and handler types.
+    /// This enables the replacement of handler and context type names in chain messages with their respective fully qualified names.
+    /// The mappings are typically added using the AddSimpleTypeMaps methods.
+    /// </summary>
+    private static Dictionary<string, string> SimpleTypeMaps { get; } = [];
+
+    /// <summary>
+    /// Adds a mapping between a given key and the assembly-qualified name of the specified type.
+    /// </summary>
+    /// <param name="key">The key associated with the type to be added to the mapping</param>
+    public static void AddSimpleTypeMaps<T>(string key)
+    {
+        var assemblyName = typeof(T).AssemblyQualifiedName!;
+        SimpleTypeMaps.Add(key, assemblyName);
+    }
+
+    /// <summary>
+    /// Adds a mapping between a key and the assembly-qualified name of a specified type to the simple type maps collection.
+    /// </summary>
+    /// <param name="key">The key to associate with the type's assembly-qualified name</param>
+    /// <param name="type">The type whose assembly-qualified name will be stored</param>
+    public static void AddSimpleTypeMaps(string key, Type type)
+    {
+        var assemblyName = type.AssemblyQualifiedName!;
+        SimpleTypeMaps.Add(key, assemblyName);
+    }
+
+    /// <summary>
+    /// Adds a mapping between the class name and the assembly-qualified name of a specified type to the simple type maps collection.
+    /// </summary>
+    public static void AddSimpleTypeMaps<T>()
+    {
+        var type = typeof(T);
+        var assemblyName = type.AssemblyQualifiedName!;
+        SimpleTypeMaps.Add(type.Name, assemblyName);
+    }
+
     private static readonly JsonSerializerOptions JsonSerializerOptions = new() { WriteIndented = false };
 
     /// <summary>
@@ -52,16 +90,23 @@ public static class BindFromIConfiguration
                                   throw new InvalidOperationException($"ContextTypeName missing in chain message configuration under '{configKey}'")
             };
 
+            ReplaceHandlerAndContextWithFullname(message);
+
             // Handle the Configuration section as native JSON
             var configSection = messageConfig.GetSection("Configuration");
+
             if (configSection.Exists() && configSection.GetChildren().Any())
                 // Convert the configuration section to a JSON string
+            {
                 message.ConfigurationJson = JsonSerializer.Serialize(
                     ConvertConfigurationToObject(configSection), JsonSerializerOptions
                 );
+            }
             else
                 // Fallback to the old ConfigurationJson property if provided
+            {
                 message.ConfigurationJson = messageConfig["ConfigurationJson"];
+            }
 
             chainMessages.Add(message);
         }
@@ -71,7 +116,20 @@ public static class BindFromIConfiguration
         return chainMessages;
     }
 
-// Helper method to convert IConfigurationSection to a serializable object
+    private static void ReplaceHandlerAndContextWithFullname(ChainMessage message)
+    {
+        if (SimpleTypeMaps.TryGetValue(message.HandlerTypeName, out var handlerType))
+        {
+            message.HandlerTypeName = handlerType;
+        }
+
+        if (SimpleTypeMaps.TryGetValue(message.ContextTypeName, out var contextType))
+        {
+            message.ContextTypeName = contextType;
+        }
+    }
+
+    // Helper method to convert IConfigurationSection to a serializable object
     private static object ConvertConfigurationToObject(IConfigurationSection section)
     {
         if (!section.GetChildren().Any())
@@ -119,7 +177,8 @@ public static class BindFromIConfiguration
 
             var inMemoryChainRepository = new InMemoryChainRepository();
 
-            foreach (var message in registeredMessages) inMemoryChainRepository.SaveChainMessagesAsync(message.Key, message).Wait(); //Ok to wait because its synchronous anyway
+            foreach (var message in registeredMessages)
+                inMemoryChainRepository.SaveChainMessagesAsync(message.Key, message).Wait(); //Ok to wait because its synchronous anyway
 
             return inMemoryChainRepository;
         });
