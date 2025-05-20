@@ -1,18 +1,23 @@
 ﻿using System.Collections.Immutable;
 using System.Text.Json.Nodes;
+using Chainer.Building.Configuration;
 using Chainer.Building.DynamicExecutors;
 using Chainer.Building.Messages;
 using Chainer.Registration;
 using Chainer.Sample.FileContextChain;
+using Chainer.Sample.FileContextChain.Handlers;
 using Chainer.Sample.Pricing;
 using Chainer.Sample.Pricing.Handlers;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 
+BindFromIConfiguration.AddSimpleTypeMaps<FileContext>();
+BindFromIConfiguration.AddSimpleTypeMaps<FileHandlerUpperCase>();
+BindFromIConfiguration.AddSimpleTypeMaps<FileHandlerRemoveComma>();
+BindFromIConfiguration.AddSimpleTypeMaps<FileHandlerIsLegit>();
 
 BindFromIConfiguration.AddSimpleTypeMaps<PriceContext>();
 BindFromIConfiguration.AddSimpleTypeMaps<NonCustomerFee>();
@@ -25,9 +30,9 @@ const string fileProcessChain2 = "FileProcessingChain2";
 const string pricing = "Pricing";
 
 // Register the dynamic chain from configuration
-builder.Services.BindAddChain(builder.Configuration, fileProcessChain, fileProcessChain);
-builder.Services.BindAddChain(builder.Configuration, fileProcessChain2, fileProcessChain2);
-builder.Services.BindAddChain(builder.Configuration, pricing, pricing);
+builder.Services.AddChainFromConfiguration(builder.Configuration, fileProcessChain);
+builder.Services.AddChainFromConfiguration(builder.Configuration, fileProcessChain2);
+builder.Services.AddChainFromConfiguration(builder.Configuration, pricing);
 
 // Register the dynamic chain executor
 builder.Services.AddScoped<IDynamicChainExecutor, DynamicChainExecutor>();
