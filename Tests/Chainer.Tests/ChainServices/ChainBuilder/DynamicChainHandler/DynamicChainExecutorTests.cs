@@ -172,7 +172,7 @@ public sealed class DynamicChainExecutorTests
                 HandlerTypeName = typeof(TestConfigurableHandler).AssemblyQualifiedName!,
                 ExecutionOrder = 1,
                 ContextTypeName = typeof(TestContext).AssemblyQualifiedName!,
-                ConfigurationJson = configJson
+                Configuration = configJson
             }
         };
 

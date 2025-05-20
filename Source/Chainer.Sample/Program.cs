@@ -12,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+
+
 BindFromIConfiguration.AddSimpleTypeMaps<PriceContext>();
 BindFromIConfiguration.AddSimpleTypeMaps<NonCustomerFee>();
 BindFromIConfiguration.AddSimpleTypeMaps<OldAgeDiscount>();
@@ -37,12 +39,12 @@ var dynamicExecutor = host.Services.GetRequiredService<IDynamicChainExecutor>();
 
 //Execute
 Console.WriteLine("Chain 1");
-var context = new FileContext { Content = "My name,,,, is Nathan Pepin. and .I'm legit" };
+var context = new FileContext { Content = "My name,,,, is Nathan Pepin. I'm legit" };
 var result1 = await dynamicExecutor.ExecuteChainAsync(fileProcessChain, context);
 WriteResult(result1.ExecutionLogs);
 
 Console.WriteLine("Chain 2");
-var context2 = new FileContext { Content = "My name,,,, is Nathan Pepin. and .I'm legit" };
+var context2 = new FileContext { Content = "My name,,,, is Nathan Pepin. I'm legit" };
 var result2 = await dynamicExecutor.ExecuteChainAsync(fileProcessChain2, context2);
 WriteResult(result2.ExecutionLogs);
 

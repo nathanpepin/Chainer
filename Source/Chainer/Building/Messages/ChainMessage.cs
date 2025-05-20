@@ -1,3 +1,5 @@
+using Chainer.Building.Configuration;
+
 namespace Chainer.Building.Messages;
 
 /// <summary>
@@ -15,8 +17,10 @@ public sealed class ChainMessage
     // Handler information
     public string HandlerTypeName { get; set; } = string.Empty;
 
-    // Configuration - stored as JSON in the database
-    public string? ConfigurationJson { get; set; }
+    public HandlerConfigurationType ConfigurationType { get; set; } = HandlerConfigurationType.Json;
+
+    // Configuration - stored as in the database
+    public string? Configuration { get; set; }
 
     // Type information
     public string ContextTypeName { get; set; } = string.Empty;

@@ -15,9 +15,9 @@ public sealed class ChainExecutionLog
         ChainId = message.ChainId;
         ExecutionOrder = message.ExecutionOrder;
         HandlerTypeName = message.HandlerTypeName;
-        ConfigurationJson = message.ConfigurationJson;
+        ConfigurationJson = message.Configuration;
         ContextTypeName = message.ContextTypeName;
-        BeforeJson = message.ConfigurationJson;
+        BeforeJson = message.Configuration;
         Status = ChainMessageStatus.Pending;
     }
 
@@ -36,8 +36,8 @@ public sealed class ChainExecutionLog
 
     // Status tracking
     public ChainMessageStatus Status { get; set; } = ChainMessageStatus.NotStarted;
-    public DateTime? ExecutedAt { get; set; }
-    public DateTime? FinishedAt { get; set; }
+    public DateTimeOffset? ExecutedAt { get; set; }
+    public DateTimeOffset? FinishedAt { get; set; }
     public string? ErrorMessage { get; set; }
 
     // Type information

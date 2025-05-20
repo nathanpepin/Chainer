@@ -120,6 +120,7 @@ public sealed class DynamicChainExecutor(
 
         try
         {
+            log.ExecutedAt = DateTimeOffset.UtcNow;
             await repository.UpdateChainExecutionLog(log, ChainMessageStatus.Executing, cancellationToken);
 
             var handlerResult = await GetAndExecuteHandlerAsync(message, context, log, cancellationToken);
@@ -130,12 +131,15 @@ public sealed class DynamicChainExecutor(
                 return handlerResult;
             }
 
+
             await repository.UpdateChainExecutionLog(log, ChainMessageStatus.Completed, cancellationToken);
             return handlerResult;
         }
         catch (Exception exception)
         {
+            log.FinishedAt = DateTimeOffset.UtcNow;
             await repository.UpdateChainExecutionLog(log, ChainMessageStatus.Error, cancellationToken);
+
             return Failure<TContext>(exception.Message);
         }
     }
@@ -185,9 +189,9 @@ public sealed class DynamicChainExecutor(
         ChainMessage message)
         where TContext : class, ICloneable, new()
     {
-        if (handler is not IConfigurableChainHandler<TContext> configurableHandler || string.IsNullOrEmpty(message.ConfigurationJson)) return;
+        if (handler is not IConfigurableChainHandler<TContext> configurableHandler || string.IsNullOrEmpty(message.Configuration)) return;
 
-        var configuration = ChainHandlerConfiguration.FromJson(message.ConfigurationJson);
+        var configuration = ChainHandlerConfiguration.FromJson(message.Configuration);
         configurableHandler.Configure(configuration);
     }
 

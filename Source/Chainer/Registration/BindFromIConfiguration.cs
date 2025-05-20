@@ -98,14 +98,14 @@ public static class BindFromIConfiguration
             if (configSection.Exists() && configSection.GetChildren().Any())
                 // Convert the configuration section to a JSON string
             {
-                message.ConfigurationJson = JsonSerializer.Serialize(
+                message.Configuration = JsonSerializer.Serialize(
                     ConvertConfigurationToObject(configSection), JsonSerializerOptions
                 );
             }
             else
                 // Fallback to the old ConfigurationJson property if provided
             {
-                message.ConfigurationJson = messageConfig["ConfigurationJson"];
+                message.Configuration = messageConfig["ConfigurationJson"];
             }
 
             chainMessages.Add(message);

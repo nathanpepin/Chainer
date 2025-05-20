@@ -37,7 +37,7 @@ public sealed class ChainDefinitionService(IChainRepository repository) : IChain
             Id = Guid.NewGuid(),
             ChainId = chainId,
             HandlerTypeName = h.HandlerType.AssemblyQualifiedName ?? h.HandlerType.FullName ?? h.HandlerType.Name,
-            ConfigurationJson = jsonValue,
+            Configuration = jsonValue,
             ExecutionOrder = h.Order,
             ContextTypeName = typeof(TContext).AssemblyQualifiedName ?? typeof(TContext).FullName ?? typeof(TContext).Name
         };
