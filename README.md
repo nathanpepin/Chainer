@@ -5,51 +5,85 @@
 Chainer provides an abstraction that makes it easy to execute a series
 of actions on a given context in sequence.
 If an action fails internally, or fails during execution,
-the error message is caught and reflected in the result
+the error message is caught and reflected in the result.
 
 The primary use case for the library is defining a series of processes
 that should apply to some context with built-in error handling.
 
-## How to define a chain
+## Execution Options
 
-The simplest chain is can be created using the ChainExecutor class.
+Chainer offers two primary approaches to chain execution:
+
+1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with minimal configuration. Ideal for direct application code where chains are defined at development time.
+
+2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external sources like databases or configuration files. Perfect for applications that need runtime chain configuration without code changes.
+
+Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the dynamic executor for flexibility and runtime configurability.
+
+## Lightweight Chain Execution
+
+The simplest chain is created using the ChainExecutor class.
 First, make a context.
 
 ```csharp
-//Must be a class and implment IClonable and have a parameterless constructor
-public class FileContext : ICloneable
+public sealed class PriceContext : ICloneable
 {
-    public string Content { get; set; } = "default";
+    public decimal InitialPrice { get; set; }
+
+    public decimal CurrentPrice { get; set; }
+
+    public Customer? Customer { get; init; }
 
     public object Clone()
     {
-        return new FileContext
+        return new PriceContext
         {
-            Content = Content
+            InitialPrice = InitialPrice,
+            CurrentPrice = CurrentPrice,
+            Customer = Customer
         };
     }
+}
+
+public sealed class Customer
+{
+    public string Name { get; init; } = string.Empty;
+    public int Age { get; init; }
+    public bool IsVip { get; init; }
 }
 ```
 
 Then create some handlers.
 
 ```csharp
-public class FileHandlerRemoveComma : IChainHandler<FileContext>
+public sealed class VipDiscount : IChainHandler<PriceContext>
 {
-    public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+    private const decimal VipDiscountAmount = 65;
+
+    public Task<Result<PriceContext>> Handle(PriceContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        context.Content = context.Content.Replace(",", "");
-        return Task.FromResult<Result<FileContext>>(context);
+        if (context.Customer?.IsVip is not true) return Task.FromResult<Result<PriceContext>>(context);
+
+        context.CurrentPrice -= VipDiscountAmount;
+
+        if (context.CurrentPrice < 0) context.CurrentPrice = 0;
+
+        return Task.FromResult<Result<PriceContext>>(context);
     }
 }
 
-public class FileHandlerIsLegit : IChainHandler<FileContext>
+public sealed class OldAgeDiscount : IChainHandler<PriceContext>
 {
-    public Task<Result<FileContext>> Handle(FileContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+    private const int MinimumAge = 65;
+    private const decimal OldAgeDiscountAmount = 0.9m;
+
+    public Task<Result<PriceContext>> Handle(PriceContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        return !context.Content.Contains("Legit", StringComparison.InvariantCultureIgnoreCase)
-            ? Task.FromResult(Result.Failure<FileContext>("This ain't legit"))
-            : Task.FromResult<Result<FileContext>>(context);
+        if (context.Customer?.Age is null or < MinimumAge) return Task.FromResult<Result<PriceContext>>(context);
+
+        context.CurrentPrice *= OldAgeDiscountAmount;
+
+        return Task.FromResult<Result<PriceContext>>(context);
     }
 }
 ```
@@ -57,15 +91,15 @@ public class FileHandlerIsLegit : IChainHandler<FileContext>
 Then define the chain using the method syntax.
 
 ```csharp
-var chain = new ChainExecutor<FileContext>()
-            .AddHandler(new FileHandlerRemoveComma())
-            .AddHandler(new FileHandlerIsLegit());
+var chain = new ChainExecutor<PriceContext>()
+            .AddHandler(new VipDiscount())
+            .AddHandler(new OldAgeDiscount());
 ```
 
 Or the constructor syntax.
 
 ```csharp
-var chain = new ChainExecutor<FileContext>([new FileHandlerRemoveComma(), new FileHandlerIsLegit()]);
+var chain = new ChainExecutor<PriceContext>([new VipDiscount(), new OldAgeDiscount()]);
 ```
 
 Note that a logger can optionally be passed into the constructor.
@@ -76,7 +110,26 @@ The logger will be forwarded to the handlers.
 To execute, call:
 
 ```csharp
+// Create a customer and pricing context
+var customer = new Customer
+{
+    Name = "John Smith",
+    Age = 70,
+    IsVip = true
+};
+
+var context = new PriceContext 
+{ 
+    Customer = customer, 
+    InitialPrice = 100,
+    CurrentPrice = 100 
+};
+
 var result = await chain.Execute(context);
+
+// The price will be reduced to 35 (100 - 65 VIP discount)
+// Then to 31.5 (35 * 0.9 due to age discount)
+Console.WriteLine($"Final price: {result.Value.CurrentPrice}"); // Output: Final price: 31.5
 ```
 
 If a null value is passed, the context will be newed up on execution.
@@ -95,15 +148,15 @@ Outputs
 
 ```text
 ----------------------------------------
-Context: Chainer.SourceGen.Sample.FileContextChain.FileContext
+Context: Chainer.Sample.Pricing.PriceContext
 Success: True
 Error: None
 Start: 2024-06-20T00:21:08
 End: 2024-06-20T00:21:08
 Execution Time: 0:00:00.0000505
 Applied Handlers
-        -Chainer.SourceGen.Sample.FileContextChain.Handlers.FileHandlerRemoveComma; Duration: 0:00:00.0000093
-        -Chainer.SourceGen.Sample.FileContextChain.Handlers.FileHandlerIsLegit; Duration: 0:00:00.0000047
+        -Chainer.Sample.Pricing.Handlers.VipDiscount; Duration: 0:00:00.0000093
+        -Chainer.Sample.Pricing.Handlers.OldAgeDiscount; Duration: 0:00:00.0000047
 ----------------------------------------
 ```
 
@@ -115,6 +168,23 @@ public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? c
         bool doNotCloneContext = false,
         CancellationToken cancellationToken = default)
 ```
+
+## Using ChainBuilder
+
+For more programmatic chain creation, you can use the ChainBuilder.
+
+```csharp
+var logger = loggerFactory.CreateLogger<PriceContext>();
+
+var chain = new ChainBuilder<PriceContext>()
+    .AddHandler(new VipDiscount())
+    .AddHandler(new OldAgeDiscount())
+    .WithLogger(logger)
+    .TrackExecutionHistory() // Optional, for ExecuteWithHistory support
+    .Build();
+```
+
+This approach provides a fluent interface for configuring chain options before building the executor.
 
 ## General Use
 
@@ -131,14 +201,15 @@ a class can be defined that inherits from ChainService.
 The executor will find the types specified from the DI container and execute the chain.
 
 ```csharp
-public class FileChain(IServiceProvider services, ILogger<FileChain> logger) : ChainService<FileContext>(services, logger)
+public class PricingChain(IServiceProvider services, ILogger<PricingChain> logger) 
+    : ChainService<PriceContext>(services, logger)
 {
     //Can disable logging if wanted
     protected override bool LoggingEnabled => false;
     
     protected override List<Type> ChainHandlers { get; } = new List<Type>
     {
-        typeof(FileHandlerRemoveComma), typeof(FileHandlerIsLegit)
+        typeof(VipDiscount), typeof(OldAgeDiscount), typeof(NonCustomerFee)
     };
 }
 ```
@@ -147,10 +218,12 @@ If using the source generator the following case be used to
 override the ChainHandlers and add all the types to the registration method.
 
 ```csharp
-[RegisterChains<FileContext>(
-    typeof(FileHandlerRemoveComma),
-    typeof(FileHandlerIsLegit))]
-public partial class FileChain(IServiceProvider services, ILogger<FileChain> logger) : ChainService<FileContext>(services, logger);
+[RegisterChains<PriceContext>(
+    typeof(VipDiscount),
+    typeof(OldAgeDiscount),
+    typeof(NonCustomerFee))]
+public partial class PricingChain(IServiceProvider services, ILogger<PricingChain> logger) 
+    : ChainService<PriceContext>(services, logger);
 ```
 
 Call the RegisterChains() method to register the services.
@@ -168,12 +241,245 @@ public static class ChainerRegistrar
 {
     public static void RegisterChains(this IServiceCollection services)
     {
-        services.TryAddScoped<FileChain>();
-        services.TryAddScoped<FileHandlerRemoveComma>();
-        services.TryAddScoped<FileHandlerIsLegit>();
+        services.TryAddScoped<PricingChain>();
+        services.TryAddScoped<VipDiscount>();
+        services.TryAddScoped<OldAgeDiscount>();
+        services.TryAddScoped<NonCustomerFee>();
     }
 }
 ```
+
+## Dynamic Chain Configuration and Execution
+
+Chainer now supports dynamic chain creation and execution through the `DynamicChainExecutor`. This allows you to define chain configurations at runtime, store them (e.g., in a repository or configuration file), and execute them on demand.
+
+The `DynamicChainExecutor` is designed with a database-centric model, where chain definitions can be stored in a database and retrieved by name or ID at runtime. This architecture enables centralized chain management and makes it possible to modify chain behavior without code changes.
+
+### Loading Chain Configurations from Files
+
+You can load chain configurations from settings files using the built-in integration:
+
+### Using the Dynamic Chain Executor
+
+```csharp
+// Register services
+builder.Services.AddScoped<IDynamicChainExecutor, DynamicChainExecutor>();
+
+// Use the InMemoryChainRepository for development/testing
+builder.Services.AddScoped<IChainRepository, InMemoryChainRepository>();
+// OR use your custom database implementation
+// builder.Services.AddScoped<IChainRepository, DatabaseChainRepository>();
+
+// Configure chain handlers
+builder.Services.AddScoped<FileHandlerRemoveComma>();
+builder.Services.AddScoped<FileHandlerIsLegit>();
+```
+
+```csharp
+// Add simple type mappings to resolve handler types
+BindFromIConfiguration.AddSimpleTypeMaps<PriceContext>();
+BindFromIConfiguration.AddSimpleTypeMaps<VipDiscount>();
+BindFromIConfiguration.AddSimpleTypeMaps<OldAgeDiscount>();
+BindFromIConfiguration.AddSimpleTypeMaps<NonCustomerFee>();
+
+// Register chains from configuration
+builder.Services.AddChainFromConfiguration(builder.Configuration, "PricingChain");
+```
+
+Example configuration in appsettings.json:
+
+```json
+{
+  "PricingChain": {
+    "ContextTypeName": "PriceContext",
+    "Chains": [
+      {
+        "HandlerTypeName": "VipDiscount"
+      },
+      {
+        "HandlerTypeName": "OldAgeDiscount"
+      },
+      {
+        "HandlerTypeName": "NonCustomerFee",
+        "Configuration": {
+          "FeeAmount": 5.00
+        }
+      }
+    ]
+  }
+}
+```
+
+### Executing Dynamic Chains
+
+Once configured, you can execute chains by chain ID, friendly name, or directly with a list of chain messages:
+
+```csharp
+// Get the dynamic chain executor
+var dynamicExecutor = host.Services.GetRequiredService<IDynamicChainExecutor>();
+
+// Execute by chain name
+var customer = new Customer
+{
+    Name = "Jane Doe",
+    Age = 70,
+    IsVip = true
+};
+var context = new PriceContext 
+{ 
+    Customer = customer, 
+    InitialPrice = 100,
+    CurrentPrice = 100 
+};
+var result = await dynamicExecutor.ExecuteChainAsync("PricingChain", context);
+
+// Execute by chain ID
+var result2 = await dynamicExecutor.ExecuteChainAsync(chainId, context);
+
+// Execute default chain
+var result3 = await dynamicExecutor.ExecuteDefaultChainAsync(context);
+```
+
+### Custom Repository Implementation
+
+By default, Chainer provides an `InMemoryChainRepository` for development and testing, but for production use, you should implement your own `IChainRepository` that connects to your database:
+
+```csharp
+public class DatabaseChainRepository : IChainRepository
+{
+    private readonly DbContext _dbContext;
+    
+    public DatabaseChainRepository(DbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+    
+    public async Task<Result<List<ChainMessage>>> GetChainMessagesAsync(Guid chainId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var messages = await _dbContext.ChainMessages
+                .Where(m => m.ChainId == chainId)
+                .OrderBy(m => m.ExecutionOrder)
+                .ToListAsync(cancellationToken);
+                
+            return Result<List<ChainMessage>>.Success(messages);
+        }
+        catch (Exception ex)
+        {
+            return Result<List<ChainMessage>>.Failure(ex);
+        }
+    }
+    
+    public async Task<Result<List<ChainMessage>>> GetChainMessagesAsync(string friendlyName, CancellationToken cancellationToken = default)
+    {
+        // Create a deterministic GUID from the string name
+        var chainId = GuidFromString.CreateDeterministicGuid(friendlyName);
+        return await GetChainMessagesAsync(chainId, cancellationToken);
+    }
+    
+    public async Task<Result<List<ChainMessage>>> GetDefaultChainMessagesAsync(CancellationToken cancellationToken = default)
+    {
+        // The default chain has a predefined GUID
+        return await GetChainMessagesAsync(InMemoryChainRepository.DefaultChainGuid, cancellationToken);
+    }
+    
+    // Implement other methods from IChainRepository interface...
+}
+```
+
+Register your custom repository in your DI container:
+
+```csharp
+// Register your custom implementation
+builder.Services.AddScoped<IChainRepository, DatabaseChainRepository>();
+
+// Then register the dynamic executor that will use it
+builder.Services.AddScoped<IDynamicChainExecutor, DynamicChainExecutor>();
+```
+
+With this approach, you can store chain definitions in your database and manage them through your application's administrative interface or through database migrations.
+
+### Configurable Handlers
+
+You can create configurable handlers that accept configuration data from your chain definitions:
+
+```csharp
+public class ConfigurableDiscountHandler : IConfigurableChainHandler<PriceContext>
+{
+    private decimal _discountAmount = 10; // Default discount
+    private bool _applyToAll = false;
+    
+    public void Configure(IHandlerConfiguration configuration)
+    {
+        var config = configuration.Bind<DiscountConfig>();
+        if (config != null)
+        {
+            _discountAmount = config.DiscountAmount;
+            _applyToAll = config.ApplyToAllCustomers;
+        }
+    }
+    
+    public Task<Result<PriceContext>> Handle(PriceContext context, ILogger? logger = null, 
+        CancellationToken cancellationToken = default)
+    {
+        // Apply discount conditionally based on configuration
+        if (_applyToAll || context.Customer?.IsVip == true)
+        {
+            context.CurrentPrice -= _discountAmount;
+            
+            // Ensure price doesn't go below zero
+            if (context.CurrentPrice < 0)
+                context.CurrentPrice = 0;
+        }
+            
+        return Task.FromResult<Result<PriceContext>>(context);
+    }
+    
+    private class DiscountConfig
+    {
+        public decimal DiscountAmount { get; init; } = 10;
+        public bool ApplyToAllCustomers { get; init; } = false;
+    }
+}
+```
+
+### Chain Execution History
+
+The dynamic executor automatically tracks execution history. The result includes details about each handler's execution:
+
+```csharp
+var result = await dynamicExecutor.ExecuteChainAsync("FileProcessingChain", context);
+
+foreach (var log in result.ExecutionLogs)
+{
+    Console.WriteLine($"{log.HandlerTypeName}: {log.Status} - {log.AfterJson}");
+}
+```
+
+## Building Dynamic Chains Programmatically
+
+You can also define chains programmatically using the `ChainDefinitionService`:
+
+```csharp
+var chainService = host.Services.GetRequiredService<IChainDefinitionService>();
+
+var handlerCommands = new List<ChainCommand>
+{
+    new(typeof(VipDiscount), 
+        new Dictionary<string, string>(), 
+        HandlerConfigurationType.Dictionary, 
+        0),
+    new(typeof(OldAgeDiscount), 
+        new { MinimumAge = 60, DiscountPercentage = 0.85 }, 
+        HandlerConfigurationType.Object, 
+        1)
+};
+
+var chainId = await chainService.CreateChainAsync<PriceContext>(handlerCommands);
+```
+
+This programmatic approach, combined with a database-backed repository, enables you to build administrative interfaces where users can define and modify chains at runtime without code changes. This creates powerful flexibility for workflow management, data processing pipelines, or any sequential operation that needs to be configurable.
 
 ## Future Plans
 
