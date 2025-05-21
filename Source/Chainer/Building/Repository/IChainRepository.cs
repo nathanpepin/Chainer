@@ -290,7 +290,7 @@ public interface IChainRepository
     ///         The logs provided to this method usually have their status set to
     ///         <see cref="ChainMessageStatus.Pending"/> and contain basic information about
     ///         the handlers to be executed. As execution progresses, these logs are updated
-    ///         using the <see cref="UpdateChainExecutionLog"/> methods.
+    ///         using the <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)"/> methods.
     ///     </para>
     ///     <para>
     ///         Implementations should:

@@ -3,13 +3,20 @@ using System.Runtime.CompilerServices;
 
 namespace Chainer.Results;
 
+/// <summary>
 /// Represents the result of an operation, encapsulating success or failure.
 /// This struct provides mechanisms to create, manipulate, and evaluate the outcome of operations
 /// by encapsulating result states, error messages, and optional exceptions.
+/// </summary>
 public readonly struct Result : IResult
 {
-    /// Represents the result of an operation, encapsulating whether the operation was successful or failed,
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Result"/> struct, encapsulating whether an operation was successful or failed,
     /// along with associated error information or exception details.
+    /// </summary>
+    /// <param name="isSuccess">A boolean value indicating whether the operation was successful.</param>
+    /// <param name="error">The error message if the operation failed; otherwise, <see cref="string.Empty"/>.</param>
+    /// <param name="exception">The exception associated with the failure, if any; otherwise, null.</param>
     private Result(bool isSuccess, string error, Exception? exception = null)
     {
         IsSuccess = isSuccess;
@@ -17,16 +24,19 @@ public readonly struct Result : IResult
         Exception = isSuccess ? null : exception;
     }
 
+    /// <summary>
     /// Gets a value indicating whether the operation represented by the result was successful.
-    /// Returns:
-    /// True if the operation was successful; otherwise, false.
+    /// </summary>
+    /// <value><c>true</c> if the operation was successful; otherwise, <c>false</c>.</value>
+    /// <remarks>
     /// This property is typically used to check the outcome of an operation encapsulated by a result type.
+    /// </remarks>
     public bool IsSuccess { get; }
 
     /// <summary>
     /// Gets a value indicating whether the operation has failed.
-    /// Returns true if the operation is not successful; otherwise, false.
     /// </summary>
+    /// <value><c>true</c> if the operation is not successful; otherwise, <c>false</c>.</value>
     /// <remarks>
     /// This property is a complement to <see cref="IsSuccess"/> and is derived
     /// by negating its value. If <see cref="IsSuccess"/> is true, this property
@@ -35,16 +45,19 @@ public readonly struct Result : IResult
     /// </remarks>
     public bool IsFailure => !IsSuccess;
 
+    /// <summary>
     /// Gets the error message associated with a failed result.
-    /// This property is an empty string if the result is successful.
-    /// It provides a human-readable message describing the reason for the failure.
+    /// </summary>
+    /// <value>The error message if the result is a failure; otherwise, <see cref="string.Empty"/>.</value>
+    /// <remarks>
+    /// This property provides a human-readable message describing the reason for the failure.
+    /// </remarks>
     public string Error { get; }
 
     /// <summary>
     /// Gets the exception associated with the failure of an operation, if any.
-    /// This property is null if the operation was successful or if no exception
-    /// is associated with the failure.
     /// </summary>
+    /// <value>The <see cref="System.Exception"/> associated with the failure, or <c>null</c> if the operation was successful or no exception was provided.</value>
     /// <remarks>
     /// Use this property to retrieve detailed information about the error that caused
     /// the operation to fail, especially in cases where an exception is available and
@@ -52,12 +65,11 @@ public readonly struct Result : IResult
     /// </remarks>
     public Exception? Exception { get; }
 
-    /// Returns a string representation of the current Result instance.
-    /// The returned string will indicate the success or failure state of the Result.
-    /// If the result is successful, it returns "Success".
-    /// If the result is a failure, it returns "Failure" followed by the error message.
+    /// <summary>
+    /// Returns a string representation of the current <see cref="Result"/> instance.
+    /// </summary>
     /// <returns>
-    /// A string indicating the success or failure status of the Result.
+    /// "Success" if the result is successful; otherwise, "Failure" followed by the error message (e.g., "Failure(Error message)").
     /// </returns>
     public override string ToString()
     {
@@ -65,17 +77,21 @@ public readonly struct Result : IResult
     }
 
     // Factory methods
-    /// Returns a successful result instance.
+    /// <summary>
+    /// Creates a successful <see cref="Result"/> instance.
+    /// </summary>
     /// <returns>A new instance of the <see cref="Result"/> struct indicating a successful operation.</returns>
     public static Result Success()
     {
         return new Result(true, string.Empty);
     }
 
-    /// Creates a failed result with the given error message.
+    /// <summary>
+    /// Creates a failed <see cref="Result"/> with the given error message.
+    /// </summary>
     /// <param name="error">The error message describing the failure. It cannot be null, empty, or consist only of white-space characters.</param>
     /// <returns>A new instance of the <see cref="Result"/> struct, representing a failure with the specified error message.</returns>
-    /// <exception cref="ArgumentException">Thrown when the provided error message is null or white space.</exception>
+    /// <exception cref="ArgumentException">Thrown when the provided <paramref name="error"/> message is null or white space.</exception>
     public static Result Failure(string error)
     {
         if (string.IsNullOrWhiteSpace(error))
@@ -85,40 +101,39 @@ public readonly struct Result : IResult
     }
 
     /// <summary>
-    /// Creates a failed <see cref="Result"/> with a specified error message.
+    /// Creates a failed <see cref="Result"/> from the specified exception.
+    /// The exception's message is used as the error message for the result.
     /// </summary>
-    /// <param name="error">The error message describing the failure. Cannot be null or empty.</param>
-    /// <returns>A failed <see cref="Result"/> instance.</returns>
-    /// <exception cref="ArgumentException">Thrown if the provided error message is null or empty.</exception>
+    /// <param name="exception">The exception that caused the failure. Cannot be null.</param>
+    /// <returns>A failed <see cref="Result"/> instance containing the exception's message and the exception itself.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the provided <paramref name="exception"/> is null.</exception>
     public static Result Failure(Exception exception)
     {
+        ArgumentNullException.ThrowIfNull(exception);
         return new Result(false, exception.Message, exception);
     }
 
     // Conversions
     /// <summary>
-    /// Defines an implicit conversion operator for the <see cref="Result"/> struct which converts a boolean value
-    /// into a <see cref="Result"/> object. When the input is <c>true</c>, a successful <see cref="Result"/> is created.
-    /// When the input is <c>false</c>, a failure <see cref="Result"/> is created with a default error message.
+    /// Defines an implicit conversion from a <see cref="bool"/> to a <see cref="Result"/>.
+    /// <c>true</c> converts to a successful <see cref="Result"/>;
+    /// <c>false</c> converts to a failed <see cref="Result"/> with a default error message "Operation failed".
     /// </summary>
-    /// <param name="success">A boolean value indicating success or failure.</param>
-    /// <returns>A <see cref="Result"/> object where <paramref name="success"/> determines its state.</returns>
+    /// <param name="success">A boolean value indicating success (<c>true</c>) or failure (<c>false</c>).</param>
+    /// <returns>A <see cref="Result"/> object representing either success or failure based on the input <paramref name="success"/> value.</returns>
     public static implicit operator Result(bool success)
     {
         return success ? Success() : Failure("Operation failed");
     }
 
-    /// Provides an implicit conversion operator for converting an exception into a Result structure.
-    /// This conversion creates a failure Result instance, encapsulating the provided exception.
-    /// Parameters:
-    /// exception:
-    /// The exception to be converted into a Result instance. Must not be null.
-    /// Returns:
-    /// A failure Result instance containing the error message and Exception, derived
-    /// from the provided exception.
-    /// Exceptions:
-    /// ArgumentNullException:
-    /// Thrown if the provided exception is null.
+    /// <summary>
+    /// Defines an implicit conversion from an <see cref="Exception"/> to a <see cref="Result"/>.
+    /// This conversion creates a failure <see cref="Result"/> instance, encapsulating the provided exception.
+    /// The exception's message will be used as the <see cref="Error"/> property of the <see cref="Result"/>.
+    /// </summary>
+    /// <param name="exception">The exception to convert. Must not be null.</param>
+    /// <returns>A failure <see cref="Result"/> instance containing the error message and <see cref="System.Exception"/> derived from the provided <paramref name="exception"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the provided <paramref name="exception"/> is null.</exception>
     public static implicit operator Result(Exception exception)
     {
         return Failure(exception);
@@ -126,14 +141,15 @@ public readonly struct Result : IResult
 
     // Core methods that work with non-generic Result
     /// <summary>
-    /// Ensures that the current result satisfies the specified predicate.
-    /// If the predicate is not satisfied, a failure result is returned with the provided error message.
+    /// Ensures that the current result satisfies the specified predicate if the result is currently successful.
+    /// If the current result is already a failure, it's returned as is.
+    /// If the predicate is not satisfied, a new failure <see cref="Result"/> is returned with the provided error message.
     /// </summary>
-    /// <param name="predicate">The function that verifies a condition on the current result.</param>
-    /// <param name="error">The error message returned if the predicate fails.</param>
+    /// <param name="predicate">The function to evaluate. It must return <c>true</c> for the condition to be satisfied.</param>
+    /// <param name="error">The error message to use if the predicate returns <c>false</c>.</param>
     /// <returns>
-    /// A <see cref="Result"/> representing the current state. If the predicate is satisfied, the current result is returned,
-    /// otherwise, a failure <see cref="Result"/> is returned with the specified error message.
+    /// The original <see cref="Result"/> if it's already a failure or if it's a success and the predicate returns <c>true</c>.
+    /// Otherwise, a new failure <see cref="Result"/> with the specified <paramref name="error"/>.
     /// </returns>
     public Result Ensure(Func<bool> predicate, string error)
     {
@@ -142,14 +158,15 @@ public readonly struct Result : IResult
     }
 
     /// <summary>
-    /// Ensures that the current <see cref="Result"/> satisfies the given predicate.
-    /// If the predicate evaluates to false, this method will return a failure <see cref="Result"/> with the specified error message.
+    /// Ensures that the current result satisfies the specified predicate if the result is currently successful.
+    /// If the current result is already a failure, it's returned as is.
+    /// If the predicate is not satisfied, a new failure <see cref="Result"/> is returned, created from the provided exception.
     /// </summary>
-    /// <param name="predicate">A function that evaluates a condition on the current <see cref="Result"/>.</param>
-    /// <param name="error">The error message to associate with the result if the predicate returns false.</param>
+    /// <param name="predicate">The function to evaluate. It must return <c>true</c> for the condition to be satisfied.</param>
+    /// <param name="exception">The exception to use for creating the failure <see cref="Result"/> if the predicate returns <c>false</c>.</param>
     /// <returns>
-    /// A success <see cref="Result"/> if the current result is successful and the predicate evaluates to true;
-    /// otherwise, a failure <see cref="Result"/> with the specified error message.
+    /// The original <see cref="Result"/> if it's already a failure or if it's a success and the predicate returns <c>true</c>.
+    /// Otherwise, a new failure <see cref="Result"/> created from the specified <paramref name="exception"/>.
     /// </returns>
     public Result Ensure(Func<bool> predicate, Exception exception)
     {
@@ -157,36 +174,49 @@ public readonly struct Result : IResult
         return predicate() ? this : Failure(exception);
     }
 
-    /// Ensures the success state of a result based on an asynchronous condition.
-    /// If the result is already in a failed state, it will remain unchanged.
-    /// If the condition is not met, the result will transition to a failed state with the specified error message.
-    /// <param name="predicate">An asynchronous function that represents the condition to evaluate.</param>
-    /// <param name="error">The error message used if the condition is not met.</param>
-    /// <returns>A new or unchanged result based on the condition evaluation.</returns>
+    /// <summary>
+    /// Ensures that the current result satisfies an asynchronous predicate if the result is currently successful.
+    /// If the current result is already a failure, it's returned as is.
+    /// If the asynchronous predicate is not satisfied, a new failure <see cref="Result"/> is returned with the provided error message.
+    /// </summary>
+    /// <param name="predicate">An asynchronous function that returns a <see cref="Task{TResult}"/> of <see cref="bool"/>. It must return <c>true</c> for the condition to be satisfied.</param>
+    /// <param name="error">The error message to use if the predicate returns <c>false</c>.</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> that represents the asynchronous operation.
+    /// The task result is the original <see cref="Result"/> if it's already a failure or if it's a success and the predicate returns <c>true</c>.
+    /// Otherwise, it's a new failure <see cref="Result"/> with the specified <paramref name="error"/>.
+    /// </returns>
     public async Task<Result> EnsureAsync(Func<Task<bool>> predicate, string error)
     {
         if (IsFailure) return this;
-        return await predicate() ? this : Failure(error);
+        return await predicate().ConfigureAwait(false) ? this : Failure(error);
     }
 
     /// <summary>
-    /// Ensures that a specified asynchronous predicate is satisfied; otherwise, sets the result as a failure with the provided exception.
+    /// Ensures that the current result satisfies an asynchronous predicate if the result is currently successful.
+    /// If the current result is already a failure, it's returned as is.
+    /// If the asynchronous predicate is not satisfied, a new failure <see cref="Result"/> is returned, created from the provided exception.
     /// </summary>
-    /// <param name="predicate">An asynchronous function that returns a boolean indicating whether the condition is satisfied.</param>
-    /// <param name="exception">The exception to associate with the result in case the predicate fails.</param>
-    /// <returns>A <see cref="Result"/> indicating success or failure based on the evaluation of the predicate.</returns>
+    /// <param name="predicate">An asynchronous function that returns a <see cref="Task{TResult}"/> of <see cref="bool"/>. It must return <c>true</c> for the condition to be satisfied.</param>
+    /// <param name="exception">The exception to use for creating the failure <see cref="Result"/> if the predicate returns <c>false</c>.</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> that represents the asynchronous operation.
+    /// The task result is the original <see cref="Result"/> if it's already a failure or if it's a success and the predicate returns <c>true</c>.
+    /// Otherwise, it's a new failure <see cref="Result"/> created from the specified <paramref name="exception"/>.
+    /// </returns>
     public async Task<Result> EnsureAsync(Func<Task<bool>> predicate, Exception exception)
     {
         if (IsFailure) return this;
-        return await predicate() ? this : Failure(exception);
+        return await predicate().ConfigureAwait(false) ? this : Failure(exception);
     }
 
     /// <summary>
-    /// Maps the current error message to a new error message using the specified mapping function.
+    /// If the result is a failure, maps its <see cref="Error"/> message to a new error message using the specified mapping function.
+    /// If the result is a success, it's returned unchanged.
     /// </summary>
-    /// <param name="errorMapper">A function that takes the current error message and returns the mapped error message.</param>
+    /// <param name="errorMapper">A function that takes the current error message and returns a new error message.</param>
     /// <returns>
-    /// A new <see cref="Result"/> with the mapped error message if the current result represents a failure;
+    /// A new failure <see cref="Result"/> with the mapped error message if the current result is a failure;
     /// otherwise, the original success <see cref="Result"/>.
     /// </returns>
     public Result MapError(Func<string, string> errorMapper)
@@ -196,12 +226,14 @@ public readonly struct Result : IResult
     }
 
     /// <summary>
-    /// Maps the exception of a failed result using the specified exception mapper function.
+    /// If the result is a failure, maps its <see cref="Exception"/> (if any) to a new exception using the specified mapping function.
+    /// The new failure <see cref="Result"/> will use the message of the mapped exception as its error message.
+    /// If the result is a success, it's returned unchanged.
     /// </summary>
-    /// <param name="exceptionMapper">A function that transforms the current exception into a new exception.</param>
+    /// <param name="exceptionMapper">A function that transforms the current exception (or null if none) into a new exception.</param>
     /// <returns>
-    /// A new <see cref="Result"/> instance with the mapped exception if the current result represents a failure;
-    /// otherwise, the original successful result.
+    /// A new failure <see cref="Result"/> with the mapped exception if the current result is a failure;
+    /// otherwise, the original successful <see cref="Result"/>.
     /// </returns>
     public Result MapException(Func<Exception?, Exception> exceptionMapper)
     {
@@ -209,14 +241,12 @@ public readonly struct Result : IResult
         return Failure(exceptionMapper(Exception));
     }
 
-    /// Executes a specified action if the current result indicates success.
-    /// This method allows chaining additional logic to be executed without requiring
-    /// further processing of the result.
-    /// <param name="action">The action to execute if the result indicates success.</param>
-    /// <returns>
-    /// The current result instance, allowing for continued method chaining. If the current
-    /// result does not indicate success, the provided action is not executed.
-    /// </returns>
+    /// <summary>
+    /// Executes the specified action if the current <see cref="Result"/> is successful.
+    /// This method allows for "tapping into" the success path to perform side effects without altering the result.
+    /// </summary>
+    /// <param name="action">The action to execute if the <see cref="Result"/> is successful.</param>
+    /// <returns>The original <see cref="Result"/> instance, allowing for fluent chaining.</returns>
     public Result Tap(Action action)
     {
         if (IsSuccess) action();
@@ -224,43 +254,52 @@ public readonly struct Result : IResult
     }
 
     /// <summary>
-    /// Executes an asynchronous action if the current result represents a success.
+    /// Executes the specified asynchronous action if the current <see cref="Result"/> is successful.
+    /// This method allows for "tapping into" the success path to perform asynchronous side effects without altering the result.
     /// </summary>
-    /// <param name="action">The asynchronous action to execute if the result is a success.</param>
-    /// <returns>The current result instance, allowing for method chaining.</returns>
+    /// <param name="action">The asynchronous action (returning a <see cref="Task"/>) to execute if the <see cref="Result"/> is successful.</param>
+    /// <returns>A <see cref="Task{Result}"/> representing the asynchronous operation, which yields the original <see cref="Result"/> instance, allowing for fluent chaining.</returns>
     public async Task<Result> TapAsync(Func<Task> action)
     {
-        if (IsSuccess) await action();
+        if (IsSuccess) await action().ConfigureAwait(false);
         return this;
     }
 
-    /// Executes the specified function only if the current result is successful.
-    /// If the result represents a failure, it returns the current failed result without executing the function.
-    /// <param name="binder">A function to execute if the current result is successful. It returns a new result to replace the current one.</param>
-    /// <returns>A new result if the current result is successful, otherwise the current result if it represents a failure.
+    /// <summary>
+    /// If the current <see cref="Result"/> is successful, executes the <paramref name="binder"/> function and returns its result.
+    /// If the current <see cref="Result"/> is a failure, it returns the current failure <see cref="Result"/> without executing the function.
+    /// This is used for chaining operations that return a <see cref="Result"/>.
+    /// </summary>
+    /// <param name="binder">A function that takes no arguments and returns a <see cref="Result"/>. This function is executed only if the current result is successful.</param>
+    /// <returns>The <see cref="Result"/> from the <paramref name="binder"/> function if the current result is successful; otherwise, the current failure <see cref="Result"/>.</returns>
     public Result Bind(Func<Result> binder)
     {
         return IsSuccess ? binder() : this;
     }
 
     /// <summary>
-    /// Executes a binding function asynchronously on a successful result, propagating the result of the binding function.
-    /// If the current result represents a failure, it propagates the failure without invoking the binding function.
+    /// If the current <see cref="Result"/> is successful, executes the asynchronous <paramref name="binder"/> function and returns its result.
+    /// If the current <see cref="Result"/> is a failure, it returns a <see cref="Task{Result}"/> containing the current failure <see cref="Result"/> without executing the function.
+    /// This is used for chaining asynchronous operations that return a <see cref="Result"/>.
     /// </summary>
-    /// <param name="binder">A function that returns a Task of Result to bind to if the current result is successful.</param>
-    /// <returns>A Task wrapping the result of the binder function if the current result is successful; otherwise, the original failed result.</returns>
+    /// <param name="binder">An asynchronous function that takes no arguments and returns a <see cref="Task{Result}"/>. This function is executed only if the current result is successful.</param>
+    /// <returns>
+    /// A <see cref="Task{Result}"/> representing the asynchronous operation.
+    /// The task will yield the <see cref="Result"/> from the <paramref name="binder"/> function if the current result was successful;
+    /// otherwise, it will yield the current failure <see cref="Result"/>.
+    /// </returns>
     public async Task<Result> BindAsync(Func<Task<Result>> binder)
     {
-        return IsSuccess ? await binder() : this;
+        return IsSuccess ? await binder().ConfigureAwait(false) : this;
     }
 
     // Pattern matching
-    /// Executes the provided match actions based on the state of the Result.
-    /// If the Result represents success, the `onSuccess` action is executed.
-    /// If the Result represents failure, the `onFailure` action is executed with the error message and the associated exception (if any).
-    /// <param name="onSuccess">The action to execute if the Result is successful.</param>
-    /// <param name="onFailure">The action to execute if the Result is a failure. It accepts the error message and an optional exception as parameters.</param>
-    /// <returns>The same Result instance, allowing method chaining if needed.
+    /// <summary>
+    /// Executes one of the provided actions based on whether the <see cref="Result"/> is a success or a failure.
+    /// </summary>
+    /// <param name="onSuccess">The action to execute if the <see cref="Result"/> is successful.</param>
+    /// <param name="onFailure">The action to execute if the <see cref="Result"/> is a failure. It receives the error message and the (optional) exception.</param>
+    /// <returns>The original <see cref="Result"/> instance, allowing for method chaining if needed.</returns>
     public Result Match(Action onSuccess, Action<string, Exception?> onFailure)
     {
         if (IsSuccess) onSuccess();
@@ -268,49 +307,51 @@ public readonly struct Result : IResult
         return this;
     }
 
-    /// Matches the result state and invokes the appropriate callback functions based on success or failure states.
-    /// <param name="onSuccess">The action to invoke when the result signifies success.</param>
-    /// <param name="onFailure">The action to invoke when the result signifies failure. It receives the error message and an optional exception.</param>
-    /// <returns>Returns the current result instance.</>
+    /// <summary>
+    /// Executes one of the provided functions based on whether the <see cref="Result"/> is a success or a failure, and returns its result.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value to be returned by the match functions.</typeparam>
+    /// <param name="onSuccess">The function to execute if the <see cref="Result"/> is successful. Returns a <typeparamref name="TResult"/>.</param>
+    /// <param name="onFailure">The function to execute if the <see cref="Result"/> is a failure. It receives the error message and the (optional) exception, and returns a <typeparamref name="TResult"/>.</param>
+    /// <returns>The value returned by either the <paramref name="onSuccess"/> or <paramref name="onFailure"/> function.</returns>
     public TResult Match<TResult>(Func<TResult> onSuccess, Func<string, Exception?, TResult> onFailure)
     {
         return IsSuccess ? onSuccess() : onFailure(Error, Exception);
     }
 
-    /// Asynchronously matches the result of the operation by executing the corresponding function for success or failure.
-    /// Calls the asynchronous `onSuccess` function if the result is successful, or the asynchronous `onFailure` function if it is a failure.
-    /// Both actions return a task for asynchronous operations.
-    /// <param name="onSuccess">The asynchronous function to execute if the operation was successful.</param>
-    /// <param name="onFailure">The asynchronous function to execute if the operation failed. Takes the error message and the associated exception, if any.</param>
-    /// <returns>A task that represents the asynchronous match operation.
-    /// If invoked on a success result, it returns the task after executing the `onSuccess`. On failure, it calls and returns the task executed by `onFailure`.</returns>
+    /// <summary>
+    /// Asynchronously executes one of the provided asynchronous actions based on whether the <see cref="Result"/> is a success or a failure.
+    /// </summary>
+    /// <param name="onSuccess">The asynchronous action (returning a <see cref="Task"/>) to execute if the <see cref="Result"/> is successful.</param>
+    /// <param name="onFailure">The asynchronous action (returning a <see cref="Task"/>) to execute if the <see cref="Result"/> is a failure. It receives the error message and the (optional) exception.</param>
+    /// <returns>A <see cref="Task{Result}"/> representing the asynchronous match operation, which yields the original <see cref="Result"/> instance.</returns>
     public async Task<Result> MatchAsync(Func<Task> onSuccess, Func<string, Exception?, Task> onFailure)
     {
-        if (IsSuccess) await onSuccess();
-        else await onFailure(Error, Exception);
+        if (IsSuccess) await onSuccess().ConfigureAwait(false);
+        else await onFailure(Error, Exception).ConfigureAwait(false);
         return this;
     }
 
-    /// Performs asynchronous pattern matching for a result object. Executes the appropriate handler based on
-    /// the success or failure state of the result.
-    /// If the result is successful, the provided onSuccess function is executed. Otherwise, the onFailure
-    /// function is executed with the error message and the associated exception (if any).
-    /// <param name="onSuccess">A function to execute when the result is successful. This function returns a task of type TResult.</param>
-    /// <param name="onFailure">A function to execute when the result is a failure. This function accepts a string (error message) and an exception, and returns a task of type TResult.</param>
-    /// <typeparam name="TResult">The type of the return value of the asynchronous handlers.</typeparam>
-    /// <returns>A task that represents the outcome of either the onSuccess or onFailure function, depending on the result state.</returns>
+    /// <summary>
+    /// Asynchronously executes one of the provided asynchronous functions based on whether the <see cref="Result"/> is a success or a failure, and returns its result.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value to be returned by the match functions.</typeparam>
+    /// <param name="onSuccess">The asynchronous function (returning a <see cref="Task{TResult}"/> of <typeparamref name="TResult"/>) to execute if the <see cref="Result"/> is successful.</param>
+    /// <param name="onFailure">The asynchronous function (returning a <see cref="Task{TResult}"/> of <typeparamref name="TResult"/>) to execute if the <see cref="Result"/> is a failure. It receives the error message and the (optional) exception.</param>
+    /// <returns>A <see cref="Task{TResult}"/> that will yield the value returned by either the <paramref name="onSuccess"/> or <paramref name="onFailure"/> asynchronous function.</returns>
     public async Task<TResult> MatchAsync<TResult>(Func<Task<TResult>> onSuccess, Func<string, Exception?, Task<TResult>> onFailure)
     {
-        return IsSuccess ? await onSuccess() : await onFailure(Error, Exception);
+        return IsSuccess ? await onSuccess().ConfigureAwait(false) : await onFailure(Error, Exception).ConfigureAwait(false);
     }
 
-    // Try methods - simpler for backward compatibility
+    // Simplified Match overloads (without Exception parameter for onFailure)
     /// <summary>
-    /// Matches the result by executing appropriate actions based on the success or failure state.
+    /// Executes one of the provided actions based on whether the <see cref="Result"/> is a success or a failure.
+    /// This overload of Match provides an <paramref name="onFailure"/> action that only accepts the error message.
     /// </summary>
     /// <param name="onSuccess">An action to execute if the result represents a success.</param>
     /// <param name="onFailure">An action to execute if the result represents a failure, provided with the error message.</param>
-    /// <returns>The same <see cref="Result"/> instance, allowing for chaining further operations.</returns>
+    /// <returns>The original <see cref="Result"/> instance, allowing for chaining further operations.</returns>
     public Result Match(Action onSuccess, Action<string> onFailure)
     {
         if (IsSuccess) onSuccess();
@@ -318,35 +359,45 @@ public readonly struct Result : IResult
         return this;
     }
 
-    /// Matches the result based on its success or failure state and executes the provided callbacks.
-    /// <param name="onSuccess">The action to execute if the result is successful.</param>
-    /// <param name="onFailure">The action to execute if the result is a failure. Receives the error message and an optional exception.</param>
-    /// <returns>The current instance of the Result.</param>
+    /// <summary>
+    /// Executes one of the provided functions based on whether the <see cref="Result"/> is a success or a failure, and returns its result.
+    /// This overload of Match provides an <paramref name="onFailure"/> function that only accepts the error message.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value to be returned by the match functions.</typeparam>
+    /// <param name="onSuccess">The function to execute if the <see cref="Result"/> is successful. Returns a <typeparamref name="TResult"/>.</param>
+    /// <param name="onFailure">The function to execute if the <see cref="Result"/> is a failure. It receives the error message and returns a <typeparamref name="TResult"/>.</param>
+    /// <returns>The value returned by either the <paramref name="onSuccess"/> or <paramref name="onFailure"/> function.</returns>
     public TResult Match<TResult>(Func<TResult> onSuccess, Func<string, TResult> onFailure)
     {
         return IsSuccess ? onSuccess() : onFailure(Error);
     }
 
-    /// Determines if there is an error present and outputs the error string if available.
+    /// <summary>
+    /// Tries to get the error message if the <see cref="Result"/> is a failure.
+    /// </summary>
     /// <param name="error">
-    /// When this method returns, contains the error string if the operation failed; otherwise, contains null.
+    /// When this method returns, contains the error message if the operation failed; otherwise, <c>null</c>.
+    /// This parameter is passed uninitialized.
     /// </param>
     /// <returns>
-    /// Returns true if there is an error (operation failed); otherwise, false (operation succeeded).
+    /// <c>true</c> if the <see cref="Result"/> is a failure (i.e., <see cref="IsFailure"/> is <c>true</c>); otherwise, <c>false</c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetError([MaybeNullWhen(false)] out string error)
     {
-        error = Error;
+        error = Error; // Will be string.Empty if IsSuccess is true
         return IsFailure;
     }
 
-    /// Tries to retrieve the exception associated with a failed result.
+    /// <summary>
+    /// Tries to get the <see cref="System.Exception"/> if the <see cref="Result"/> is a failure and an exception is present.
+    /// </summary>
     /// <param name="exception">
-    /// When this method returns, contains the exception associated with the failed result, if available; otherwise null.
+    /// When this method returns, contains the <see cref="System.Exception"/> associated with the failed result, if available; otherwise <c>null</c>.
+    /// This parameter is passed uninitialized.
     /// </param>
     /// <returns>
-    /// True if the result represents a failure and an exception is available; otherwise, false.
+    /// <c>true</c> if the <see cref="Result"/> represents a failure and an <see cref="System.Exception"/> is available; otherwise, <c>false</c>.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetException([NotNullWhen(true)] out Exception? exception)

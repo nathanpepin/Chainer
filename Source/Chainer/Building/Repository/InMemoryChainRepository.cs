@@ -302,7 +302,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     ///         replacing existing definitions.
     ///     </para>
     ///     <para>
-    ///         The method uses <see cref="ConcurrentDictionary{TKey, TValue}.AddOrUpdate"/>
+    ///         The method uses <see cref="ConcurrentDictionary{TKey, TValue}"/>
     ///         to ensure thread-safety when updating the dictionary. This allows multiple
     ///         threads to save messages concurrently without conflicts.
     ///     </para>
