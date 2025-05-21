@@ -2,27 +2,19 @@
 
 ## What is Chainer?
 
-Chainer provides an abstraction that makes it easy to execute a series
-of actions on a given context in sequence.
-If an action fails internally, or fails during execution,
-the error message is caught and reflected in the result.
+Chainer provides an abstraction that makes it easy to execute a series of actions on a given context in sequence. If an action fails internally or during execution, the error message is caught and reflected in the result.
 
-The primary use case for the library is defining a series of processes
-that should apply to some context with built-in error handling.
+The primary use case for the library is defining a series of processes that should apply to some context with built-in error handling.
 
 ## Execution Options
 
 Chainer offers two primary approaches to chain execution:
 
-1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with
-   minimal configuration. Ideal for direct application code where chains are defined at development time.
+1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with minimal configuration. Ideal for direct application code where chains are defined at development time.
 
-2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external
-   sources like databases or configuration files. Perfect for applications that need runtime chain configuration without
-   code changes.
+2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external sources like databases or configuration files. Perfect for applications that need runtime chain configuration without code changes.
 
-Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the
-dynamic executor for flexibility and runtime configurability.
+Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the dynamic executor for flexibility and runtime configurability.
 
 ## Lightweight Chain Execution
 
@@ -173,23 +165,6 @@ public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? c
         CancellationToken cancellationToken = default)
 ```
 
-## Using ChainBuilder
-
-For more programmatic chain creation, you can use the ChainBuilder.
-
-```csharp
-var logger = loggerFactory.CreateLogger<PriceContext>();
-
-var chain = new ChainBuilder<PriceContext>()
-    .AddHandler(new VipDiscount())
-    .AddHandler(new OldAgeDiscount())
-    .WithLogger(logger)
-    .TrackExecutionHistory() // Optional, for ExecuteWithHistory support
-    .Build();
-```
-
-This approach provides a fluent interface for configuring chain options before building the executor.
-
 ## General Use
 
 The ChainExecutor can be useful for chains that aren't predefined.
@@ -218,53 +193,48 @@ public class PricingChain(IServiceProvider services, ILogger<PricingChain> logge
 }
 ```
 
-If using the source generator the following case be used to
-override the ChainHandlers and add all the types to the registration method.
+The ChainService acts as a facade over ChainExecutor, resolving the handlers from the dependency injection container
+and creating the chain. It provides the same execution methods as ChainExecutor, but with the advantage of leveraging
+dependency injection to resolve handlers.
 
-```csharp
-[RegisterChains<PriceContext>(
-    typeof(VipDiscount),
-    typeof(OldAgeDiscount),
-    typeof(NonCustomerFee))]
-public partial class PricingChain(IServiceProvider services, ILogger<PricingChain> logger) 
-    : ChainService<PriceContext>(services, logger);
-```
-
-Call the RegisterChains() method to register the services.
+To register the chain and its handlers with the DI container:
 
 ```csharp
 var builder = Host.CreateApplicationBuilder();
-builder.Services.RegisterChains();
+builder.Services.AddScoped<PricingChain>();
+builder.Services.AddScoped<VipDiscount>();
+builder.Services.AddScoped<OldAgeDiscount>();
+builder.Services.AddScoped<NonCustomerFee>();
 var host = builder.Build();
 ```
 
-The RegisterChains() will register all the services as follows.
+Then you can use the ChainService like this:
 
 ```csharp
-public static class ChainerRegistrar
-{
-    public static void RegisterChains(this IServiceCollection services)
-    {
-        services.TryAddScoped<PricingChain>();
-        services.TryAddScoped<VipDiscount>();
-        services.TryAddScoped<OldAgeDiscount>();
-        services.TryAddScoped<NonCustomerFee>();
-    }
-}
+// Get the chain service from DI
+var pricingChain = host.Services.GetRequiredService<PricingChain>();
+
+// Execute the chain
+var result = await pricingChain.Execute(context);
+
+// Or execute with history
+var historyResult = await pricingChain.ExecuteWithHistory(context);
 ```
+
+This approach is ideal for scenarios where:
+- Handlers have dependencies that should be injected
+- Chain definitions are static and known at compile-time
+- You want to leverage the DI container for handler lifetime management
+- You need a clean, service-based API for chain execution
 
 ## Dynamic Chain Configuration and Execution
 
-Chainer now supports dynamic chain creation and execution through the `DynamicChainExecutor`. This allows you to define
+Chainer supports dynamic chain creation and execution through the `DynamicChainExecutor`. This allows you to define
 chain configurations at runtime, store them (e.g., in a repository or configuration file), and execute them on demand.
 
 The `DynamicChainExecutor` is designed with a database-centric model, where chain definitions can be stored in a
 database and retrieved by name or ID at runtime. This architecture enables centralized chain management and makes it
 possible to modify chain behavior without code changes.
-
-### Loading Chain Configurations from Files
-
-You can load chain configurations from settings files using the built-in integration:
 
 ### Using the Dynamic Chain Executor
 
@@ -281,6 +251,10 @@ builder.Services.AddScoped<IChainRepository, InMemoryChainRepository>();
 builder.Services.AddScoped<FileHandlerRemoveComma>();
 builder.Services.AddScoped<FileHandlerIsLegit>();
 ```
+
+### Loading Chain Configurations from Files
+
+You can load chain configurations from settings files using the built-in integration:
 
 ```csharp
 // Add simple type mappings to resolve handler types
@@ -494,6 +468,6 @@ management, data processing pipelines, or any sequential operation that needs to
 
 ## Future Plans
 
-Though the library is intended to be limited is scope, feel free to give suggestions
+Though the library is intended to be limited in scope, feel free to give suggestions
 or submit pull requests. The base functionality of the library is present,
 but there could likely be improvements in testing and performance.
