@@ -7,23 +7,23 @@ namespace Chainer.Sample.Pricing.Handlers;
 
 public sealed class StorewideSale : IConfigurableChainHandler<PriceContext>, ISaveBeforeContextData, ISaveAfterContextData
 {
-    private StorewideSaleConfiguration? _configuration;
+    public StorewideSaleConfiguration? Configuration { get; set; }
 
     public Task<Result<PriceContext>> Handle(PriceContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        if (_configuration is null) return Task.FromResult<Result<PriceContext>>(context);
+        if (Configuration is null) return Task.FromResult<Result<PriceContext>>(context);
 
-        context.CurrentPrice -= _configuration.DiscountAmount;
+        context.CurrentPrice -= Configuration.DiscountAmount;
 
         return Task.FromResult<Result<PriceContext>>(context);
     }
 
     public void Configure(IHandlerConfiguration configuration)
     {
-        _configuration = configuration.Bind<StorewideSaleConfiguration>();
+        Configuration = configuration.Bind<StorewideSaleConfiguration>();
     }
 
-    private sealed class StorewideSaleConfiguration
+    public sealed class StorewideSaleConfiguration
     {
         public decimal DiscountAmount { get; init; }
     }

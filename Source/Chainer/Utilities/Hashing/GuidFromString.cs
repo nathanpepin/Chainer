@@ -3,8 +3,16 @@ using System.Text;
 
 namespace Chainer.Utilities.Hashing;
 
+/// <summary>
+/// Provides utilities for generating GUIDs deterministically from strings.
+/// </summary>
 public static class GuidFromString
 {
+    /// <summary>
+    /// Creates a deterministic GUID based on a given string value.
+    /// </summary>
+    /// <param name="input">The string input used to generate the deterministic GUID.</param>
+    /// <returns>A GUID that is deterministically generated from the provided input string.</returns>
     public static Guid CreateDeterministicGuid(string input)
     {
         // Use DNS namespace as default namespace
@@ -32,6 +40,15 @@ public static class GuidFromString
         return new Guid(hashBytes[..16]);
     }
 
+    /// <summary>
+    /// Reorders the bytes of a GUID to conform to the UUID variant layout.
+    /// This operation is necessary for ensuring the proper endianness
+    /// in deterministic GUID generation scenarios.
+    /// </summary>
+    /// <param name="guid">
+    /// A byte array representing a GUID in its current byte order.
+    /// The method modifies this array in place to reflect the swapped byte order.
+    /// </param>
     private static void SwapByteOrder(byte[] guid)
     {
         // Swap the byte order to match UUID variant layout
@@ -41,6 +58,12 @@ public static class GuidFromString
         SwapBytes(guid, 6, 7);
     }
 
+    /// <summary>
+    /// Swaps the positions of two specified bytes in an array.
+    /// </summary>
+    /// <param name="guid">The byte array whose bytes will be swapped.</param>
+    /// <param name="left">The index of the first byte to swap.</param>
+    /// <param name="right">The index of the second byte to swap.</param>
     private static void SwapBytes(byte[] guid, int left, int right)
     {
         (guid[left], guid[right]) = (guid[right], guid[left]);

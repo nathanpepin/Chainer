@@ -1,14 +1,26 @@
 namespace Chainer.Results;
 
+/// Provides extension methods for the Result<T> and Result types, enabling operations such as flattening, combining, and handling success or failure conditions.
 public static class ResultExtensions
 {
-    // Flatten nested results
+    /// Flattens a nested result of type `Result<Result<T>>` into a single `Result<T>`.
+    /// If the input result is in a failure state, it propagates the error or exception to the flattened result.
+    /// If the input result is successful, it extracts and returns the inner result.
+    /// <param name="result">The result of type `Result<Result<T>>` to be flattened.</param>
+    /// <typeparam name="T">The type of the value contained in the result.</typeparam>
+    /// <returns>
+    /// A flattened result of type `Result<T>`. If the input result is a failure, it returns a failure result with the
+    /// propagated error or exception. Otherwise, it returns the extracted inner result.
+    /// </returns>
     public static Result<T> Flatten<T>(this Result<Result<T>> result)
     {
         return result.IsFailure ? result.Exception != null ? Result<T>.Failure(result.Exception) : Result<T>.Failure(result.Error) : result.Value;
     }
 
-    // Try methods that catch exceptions
+    /// Executes a given action within a try-catch block, returning a successful result if no exception occurs,
+    /// or capturing the exception in a failure result if an exception is thrown.
+    /// <param name="action">The action to execute. Must not be null.</param>
+    /// <returns>A successful result if the action executes without exceptions; otherwise, a failure result containing the captured exception.</returns>
     public static Result Try(Action action)
     {
         try
@@ -22,6 +34,12 @@ public static class ResultExtensions
         }
     }
 
+    /// Executes an asynchronous operation and encapsulates its result in a <see cref="Result"/> structure.
+    /// Captures any exceptions that occur during the execution of the given asynchronous action.
+    /// <param name="action">The asynchronous action to execute.</param>
+    /// <returns>A <see cref="Result"/> indicating the success or failure of the operation.
+    /// If the operation succeeds, the result will be a successful result.
+    /// If an exception is thrown, the result will be a failure encapsulating the exception.</returns>
     public static async Task<Result> TryAsync(Func<Task> action)
     {
         try
@@ -35,6 +53,13 @@ public static class ResultExtensions
         }
     }
 
+    /// Executes a provided function and captures its result within a `Result<T>` object.
+    /// If the function executes successfully, a successful `Result<T>` is returned containing the result of the function.
+    /// If an exception occurs during the execution of the function, a failed `Result<T>` is returned with the exception captured.
+    /// <typeparam name="T">The type of the result value.</typeparam>
+    /// <param name="func">The function to be executed, encapsulating the logic that may throw an exception.</param>
+    /// <returns>A `Result<T>` object representing the outcome of the function execution.
+    /// If successful, it contains the resulting value of type `T`. In case of failure, it includes the associated exception.
     public static Result<T> Try<T>(Func<T> func)
     {
         try
@@ -47,6 +72,15 @@ public static class ResultExtensions
         }
     }
 
+    /// <summary>
+    /// Attempts to asynchronously execute the provided function and captures its result.
+    /// </summary>
+    /// <typeparam name="T">The type of the result produced by the function.</typeparam>
+    /// <param name="func">The asynchronous function to execute.</param>
+    /// <returns>
+    /// A <see cref="Result{T}"/> instance representing the success or failure of the function execution.
+    /// On success, contains the result of the function. On failure, contains the captured exception.
+    /// </returns>
     public static async Task<Result<T>> TryAsync<T>(Func<Task<T>> func)
     {
         try
@@ -60,37 +94,69 @@ public static class ResultExtensions
     }
 
     // Convenience methods for making code more readable
+    /// Returns a successful result.
+    /// <return>Returns an instance of a successful Result.</return>
     public static Result Success()
     {
         return Result.Success();
     }
 
+    /// Returns a successful result containing the provided value.
+    /// <param name="value">
+    /// The value to encapsulate in the successful result.
+    /// </param>
+    /// <returns>
+    /// A Result instance containing the provided value and indicating success.
+    /// </returns>
     public static Result<T> Success<T>(T value)
     {
         return Result<T>.Success(value);
     }
 
+    /// Creates a failure result with the specified error message.
+    /// <param name="error">The error message associated with the failure result.</param>
+    /// <return>A failure result containing the specified error message.</return>
     public static Result Failure(string error)
     {
         return Result.Failure(error);
     }
 
+    /// <summary>
+    /// Creates a failure <see cref="Result{T}"/> instance with the specified error message.
+    /// </summary>
+    /// <typeparam name="T">The type of the result.</typeparam>
+    /// <param name="error">The error message describing the failure.</param>
+    /// <returns>A failure result containing the provided error message.</returns>
     public static Result<T> Failure<T>(string error)
     {
         return Result<T>.Failure(error);
     }
 
+    /// Creates a failure result with the specified exception.
+    /// <param name="exception">The exception associated with the failure.</param>
+    /// <return>A failure result containing the provided exception.</return>
     public static Result Failure(Exception exception)
     {
         return Result.Failure(exception);
     }
 
+    /// <summary>
+    /// Creates a failure result with the specified error.
+    /// </summary>
+    /// <param name="error">The error message to associate with the failure result.</param>
+    /// <returns>A failure result containing the specified error message.</returns>
     public static Result<T> Failure<T>(Exception exception)
     {
         return Result<T>.Failure(exception);
     }
 
-    // Combine multiple results - preserving exceptions if possible
+    /// Combines a collection of results into a single result based on the provided combiner function.
+    /// If all results are successful, their values are combined using the combiner function, and a successful result is returned.
+    /// If one or more results are failures, a failure result is returned with either the first encountered exception or a combined error message.
+    /// <param name="results">The collection of results to combine.</param>
+    /// <param name="combiner">The function to combine the values of successful results into a single value.</param>
+    /// <typeparam name="T">The type of the result values.</typeparam>
+    /// <returns>A combined result. If all results are successful, a successful result containing the combined value is returned. If there are any failures, a failure result is returned with either the first encountered exception or a combined error message.</returns>
     public static Result<T> Combine<T>(this IEnumerable<Result<T>> results, Func<IEnumerable<T>, T> combiner)
     {
         var resultsList = results.ToList();
@@ -100,13 +166,22 @@ public static class ResultExtensions
         {
             // Try to find the first exception to preserve
             var firstWithException = failures.FirstOrDefault(f => f.Exception != null);
-            if (firstWithException.IsFailure) return Result<T>.Failure(firstWithException.Exception!);
-
-            // Otherwise return combined error messages
-            return Result<T>.Failure(string.Join(", ", failures.Select(x => x.Error)));
+            return firstWithException.IsFailure
+                ? Result<T>.Failure(firstWithException.Exception!)
+                :
+                // Otherwise return combined error messages
+                Result<T>.Failure(string.Join(", ", failures.Select(x => x.Error)));
         }
     }
 
+    /// Combines multiple `Result` objects into a single `Result`. If all results are successful, the combined result
+    /// will also be successful. If any result has failed, the combined result will be a failure, propagating the first
+    /// exception found or concatenating error messages from all failed results.
+    /// <param name="results">A collection of `Result` objects to combine.</param>
+    /// <returns>
+    /// A combined `Result`. If all input results are successful, returns a successful result. If any input result
+    /// has failed, returns a failure result containing combined error messages or the first exception found.
+    /// </returns>
     public static Result Combine(this IEnumerable<Result> results)
     {
         var resultsList = results.ToList();
@@ -116,10 +191,11 @@ public static class ResultExtensions
         {
             // Try to find the first exception to preserve
             var firstWithException = failures.FirstOrDefault(f => f.Exception != null);
-            if (firstWithException.IsFailure) return Result.Failure(firstWithException.Exception!);
-
-            // Otherwise return combined error messages
-            return Result.Failure(string.Join(", ", failures.Select(x => x.Error)));
+            return firstWithException.IsFailure
+                ? Result.Failure(firstWithException.Exception!)
+                :
+                // Otherwise return combined error messages
+                Result.Failure(string.Join(", ", failures.Select(x => x.Error)));
         }
     }
 }
