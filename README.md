@@ -14,11 +14,15 @@ that should apply to some context with built-in error handling.
 
 Chainer offers two primary approaches to chain execution:
 
-1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with minimal configuration. Ideal for direct application code where chains are defined at development time.
+1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with
+   minimal configuration. Ideal for direct application code where chains are defined at development time.
 
-2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external sources like databases or configuration files. Perfect for applications that need runtime chain configuration without code changes.
+2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external
+   sources like databases or configuration files. Perfect for applications that need runtime chain configuration without
+   code changes.
 
-Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the dynamic executor for flexibility and runtime configurability.
+Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the
+dynamic executor for flexibility and runtime configurability.
 
 ## Lightweight Chain Execution
 
@@ -251,9 +255,12 @@ public static class ChainerRegistrar
 
 ## Dynamic Chain Configuration and Execution
 
-Chainer now supports dynamic chain creation and execution through the `DynamicChainExecutor`. This allows you to define chain configurations at runtime, store them (e.g., in a repository or configuration file), and execute them on demand.
+Chainer now supports dynamic chain creation and execution through the `DynamicChainExecutor`. This allows you to define
+chain configurations at runtime, store them (e.g., in a repository or configuration file), and execute them on demand.
 
-The `DynamicChainExecutor` is designed with a database-centric model, where chain definitions can be stored in a database and retrieved by name or ID at runtime. This architecture enables centralized chain management and makes it possible to modify chain behavior without code changes.
+The `DynamicChainExecutor` is designed with a database-centric model, where chain definitions can be stored in a
+database and retrieved by name or ID at runtime. This architecture enables centralized chain management and makes it
+possible to modify chain behavior without code changes.
 
 ### Loading Chain Configurations from Files
 
@@ -342,7 +349,8 @@ var result3 = await dynamicExecutor.ExecuteDefaultChainAsync(context);
 
 ### Custom Repository Implementation
 
-By default, Chainer provides an `InMemoryChainRepository` for development and testing, but for production use, you should implement your own `IChainRepository` that connects to your database:
+By default, Chainer provides an `InMemoryChainRepository` for development and testing, but for production use, you
+should implement your own `IChainRepository` that connects to your database:
 
 ```csharp
 public class DatabaseChainRepository : IChainRepository
@@ -398,7 +406,8 @@ builder.Services.AddScoped<IChainRepository, DatabaseChainRepository>();
 builder.Services.AddScoped<IDynamicChainExecutor, DynamicChainExecutor>();
 ```
 
-With this approach, you can store chain definitions in your database and manage them through your application's administrative interface or through database migrations.
+With this approach, you can store chain definitions in your database and manage them through your application's
+administrative interface or through database migrations.
 
 ### Configurable Handlers
 
@@ -479,7 +488,9 @@ var handlerCommands = new List<ChainCommand>
 var chainId = await chainService.CreateChainAsync<PriceContext>(handlerCommands);
 ```
 
-This programmatic approach, combined with a database-backed repository, enables you to build administrative interfaces where users can define and modify chains at runtime without code changes. This creates powerful flexibility for workflow management, data processing pipelines, or any sequential operation that needs to be configurable.
+This programmatic approach, combined with a database-backed repository, enables you to build administrative interfaces
+where users can define and modify chains at runtime without code changes. This creates powerful flexibility for workflow
+management, data processing pipelines, or any sequential operation that needs to be configurable.
 
 ## Future Plans
 

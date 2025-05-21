@@ -1,5 +1,3 @@
-using Chainer.Building.Configuration;
-
 namespace Chainer.Building.Messages;
 
 /// <summary>

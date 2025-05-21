@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Chainer.Core.ContextHistory;
 using Microsoft.Extensions.Logging;
 

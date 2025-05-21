@@ -154,7 +154,8 @@ internal static class CompilationExtensions
     {
         if (typeSymbol is not INamedTypeSymbol namedTypeSymbol) return null;
 
-        if (namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T && namedTypeSymbol.TypeArguments.Length == 1) return namedTypeSymbol.TypeArguments[0];
+        if (namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T && namedTypeSymbol.TypeArguments.Length == 1)
+            return namedTypeSymbol.TypeArguments[0];
 
         return null;
     }

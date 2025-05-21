@@ -1,4 +1,3 @@
-using Chainer.Building.Configuration;
 using Chainer.Building.Configuration.Persistence;
 using Chainer.Core;
 using Chainer.Results;

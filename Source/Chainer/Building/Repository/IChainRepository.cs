@@ -1,5 +1,3 @@
-using Chainer.Building.Messages;
-
 namespace Chainer.Building.Repository;
 
 public interface IChainRepository

@@ -3,17 +3,17 @@ using Microsoft.Extensions.Logging;
 namespace Chainer.Core;
 
 /// <summary>
-/// Builder for creating and configuring a chain of handlers.
+///     Builder for creating and configuring a chain of handlers.
 /// </summary>
 /// <typeparam name="TContext">The context type that will flow through the chain</typeparam>
 public sealed class ChainBuilder<TContext> where TContext : class, ICloneable, new()
 {
     private readonly List<IChainHandler<TContext>> _handlers = [];
-    private ILogger? _logger;
     private bool _cloneContextInHistory = true;
+    private ILogger? _logger;
 
     /// <summary>
-    /// Adds a handler to the chain.
+    ///     Adds a handler to the chain.
     /// </summary>
     /// <param name="handler">The handler to add</param>
     /// <returns>The chain builder for fluent chaining</returns>
@@ -24,7 +24,7 @@ public sealed class ChainBuilder<TContext> where TContext : class, ICloneable, n
     }
 
     /// <summary>
-    /// Adds multiple handlers to the chain.
+    ///     Adds multiple handlers to the chain.
     /// </summary>
     /// <param name="handlers">The handlers to add</param>
     /// <returns>The chain builder for fluent chaining</returns>
@@ -35,7 +35,7 @@ public sealed class ChainBuilder<TContext> where TContext : class, ICloneable, n
     }
 
     /// <summary>
-    /// Sets the logger for the chain.
+    ///     Sets the logger for the chain.
     /// </summary>
     /// <param name="logger">The logger instance</param>
     /// <returns>The chain builder for fluent chaining</returns>
@@ -46,7 +46,7 @@ public sealed class ChainBuilder<TContext> where TContext : class, ICloneable, n
     }
 
     /// <summary>
-    /// Enables tracking of execution history.
+    ///     Enables tracking of execution history.
     /// </summary>
     /// <param name="cloneContext">Whether to clone the context at each step (default: true)</param>
     /// <returns>The chain builder for fluent chaining</returns>
@@ -57,7 +57,7 @@ public sealed class ChainBuilder<TContext> where TContext : class, ICloneable, n
     }
 
     /// <summary>
-    /// Builds the chain executor.
+    ///     Builds the chain executor.
     /// </summary>
     /// <returns>A ChainExecutor configured with the specified options</returns>
     public ChainExecutor<TContext> Build()

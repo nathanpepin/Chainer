@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics;
 using Chainer.Core.ContextHistory;
 using Microsoft.Extensions.Logging;
@@ -87,7 +86,8 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
     /// <summary>
     ///     Safety executes the chain of handlers in sequence or registration and returns the final context result.
-    ///     Provides metadata about the execution such as the start and end time, the handlers that were executed, and the history of the context.
+    ///     Provides metadata about the execution such as the start and end time, the handlers that were executed, and the
+    ///     history of the context.
     /// </summary>
     /// <param name="context">The context to be acted upon.</param>
     /// <param name="doNotCloneContext">
