@@ -28,8 +28,8 @@ public static class ChainExecutorExample
         };
         var context = new PriceContext { Customer = customer, CurrentPrice = 100, InitialPrice = 100 };
 
-        var result = await chains.ExecuteWithHistory(context);
-        Console.WriteLine(result.PrintOutput());
+        var result = await chains.Execute(context);
+        // Console.WriteLine(result.PrintOutput()); //TODO:
         /*
         Context: Chainer.Sample.Pricing.PriceContext
         Success: True

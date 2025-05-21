@@ -1,4 +1,3 @@
-using Chainer.Core.ContextHistory;
 using Microsoft.Extensions.Logging;
 
 namespace Chainer.Core;
@@ -201,13 +200,21 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     ///     A <see cref="Result{TContext}"/> containing either the successfully processed context
     ///     or information about the failure if handler resolution or execution failed.
     /// </returns>
-    public async Task<Result<TContext>> Execute(TContext? context, CancellationToken cancellationToken = default)
+    public async Task<ChainExecutionResult<TContext>> Execute(TContext? context, CancellationToken cancellationToken = default)
     {
-        if (GetRegisteredHandlers() is (false, _) registration)
-            return Failure<TContext>(registration.Error ?? "Unknown error");
+        if (GetRegisteredHandlers() is not (false, _) registration)
+        {
+            return await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
+                .Execute(context, cancellationToken);
+        }
 
-        return await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
-            .Execute(context, cancellationToken);
+        var executionLogs = ChainHandlers
+            .Select(ChainExecutionLog.Create<TContext>)
+            .ToImmutableArray();
+
+        return new ChainExecutionResult<TContext>(
+            Result<TContext>.Failure(registration.Error ?? "Unknown error"),
+            executionLogs);
     }
 
     /// <summary>

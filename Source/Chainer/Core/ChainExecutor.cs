@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Chainer.Core.ContextHistory;
 using Microsoft.Extensions.Logging;
 
 namespace Chainer.Core;
@@ -183,15 +182,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
         context ??= new TContext();
 
         var executionLogs = ChainHandlers
-            .Select((x, i) => new ChainExecutionLog
-            {
-                Id = Guid.Empty,
-                ChainId = Guid.Empty,
-                ExecutionOrder = i,
-                HandlerTypeName = x.GetType().FullName!,
-                Status = ChainMessageStatus.NotStarted,
-                ContextTypeName = typeof(TContext).AssemblyQualifiedName!,
-            })
+            .Select(ChainExecutionLog.Create)
             .ToImmutableArray();
 
         if (ChainHandlers.Count == 0)
@@ -229,11 +220,11 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
             if (!flattenedResult.IsFailure) continue;
 
             logger?.LogError("Failed to execute {HandlerName} due to reason {Error}", handlerName, flattenedResult.Error);
-            return flattenedResult;
+            return new ChainExecutionResult<TContext>(flattenedResult, executionLogs);
         }
 
         logger?.LogInformation("Chain executed all handlers in {Elapsed}", chainStopWatch.Elapsed.ToString("g"));
 
-        return context;
+        return new ChainExecutionResult<TContext>(Result<TContext>.Success(context), executionLogs);
     }
 }

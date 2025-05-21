@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Chainer.Building.DynamicExecutors;
 
 /// <summary>
@@ -56,4 +58,14 @@ namespace Chainer.Building.DynamicExecutors;
 /// </code>
 /// </remarks>
 public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, ImmutableArray<ChainExecutionLog> ExecutionLogs)
-    where TContext : class, ICloneable, new();
+    where TContext : class, ICloneable, new()
+{
+    public override string ToString()
+    {
+        StringBuilder output = new();
+        
+        //TODO:
+        
+        return output.ToString();
+    }
+}

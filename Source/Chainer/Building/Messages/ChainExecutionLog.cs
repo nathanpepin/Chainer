@@ -98,6 +98,34 @@ public class ChainExecutionLog
         Status = ChainMessageStatus.Pending;
     }
 
+    public static ChainExecutionLog Create<TContext>(IChainHandler<TContext> chainHandler, int order)
+        where TContext : class, ICloneable, new()
+    {
+        return new ChainExecutionLog
+        {
+            Id = Guid.Empty,
+            ChainId = Guid.Empty,
+            ExecutionOrder = order,
+            HandlerTypeName = chainHandler.GetType().FullName!,
+            Status = ChainMessageStatus.NotStarted,
+            ContextTypeName = typeof(TContext).AssemblyQualifiedName!,
+        };
+    }
+
+    public static ChainExecutionLog Create<TContext>(Type type, int order)
+        where TContext : class, ICloneable, new()
+    {
+        return new ChainExecutionLog
+        {
+            Id = Guid.Empty,
+            ChainId = Guid.Empty,
+            ExecutionOrder = order,
+            HandlerTypeName = type.FullName!,
+            Status = ChainMessageStatus.NotStarted,
+            ContextTypeName = typeof(TContext).AssemblyQualifiedName!,
+        };
+    }
+
     /// <summary>
     ///     Gets or sets the unique identifier for this execution log record.
     /// </summary>
