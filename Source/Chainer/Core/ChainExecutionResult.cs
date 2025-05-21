@@ -55,5 +55,5 @@ namespace Chainer.Building.DynamicExecutors;
 /// }
 /// </code>
 /// </remarks>
-public sealed record DynamicChainExecutionResult<TContext>(Result<TContext> Context, ImmutableArray<ChainExecutionLog> ExecutionLogs)
+public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, ImmutableArray<ChainExecutionLog> ExecutionLogs)
     where TContext : class, ICloneable, new();

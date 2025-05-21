@@ -173,7 +173,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     ///     A <see cref="Result{TContext}"/> containing either the successfully processed context
     ///     or information about the failure if any handler failed or threw an exception.
     /// </returns>
-    public async Task<Result<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)
+    public async Task<ChainExecutionResult<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)
     {
         logger?.LogInformation("Executing chain");
 
@@ -182,13 +182,27 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
         context ??= new TContext();
 
+        var executionLogs = ChainHandlers
+            .Select((x, i) => new ChainExecutionLog
+            {
+                Id = Guid.Empty,
+                ChainId = Guid.Empty,
+                ExecutionOrder = i,
+                HandlerTypeName = x.GetType().FullName!,
+                Status = ChainMessageStatus.NotStarted,
+                ContextTypeName = typeof(TContext).AssemblyQualifiedName!,
+            })
+            .ToImmutableArray();
+
         if (ChainHandlers.Count == 0)
         {
             logger?.LogError(NoHandlersErrorMessage);
-            return Failure<TContext>(NoHandlersErrorMessage);
+
+
+            return new ChainExecutionResult<TContext>(Result<TContext>.Failure(NoHandlersErrorMessage), executionLogs);
         }
 
-        var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
+        var queue = new Queue<(IChainHandler<TContext>, ChainExecutionLog)>(ChainHandlers.Zip(executionLogs));
 
         Stopwatch chainStopWatch = new();
         chainStopWatch.Start();
@@ -197,7 +211,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
         while (queue.Count != 0)
         {
-            var handler = queue.Dequeue();
+            var (handler, chainExecutionLog) = queue.Dequeue();
             var handlerName = handler.GetType().FullName ?? "Could not get name";
 
             logger?.LogInformation("Executing next handler {HandlerName}", handlerName);
@@ -221,161 +235,5 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
         logger?.LogInformation("Chain executed all handlers in {Elapsed}", chainStopWatch.Elapsed.ToString("g"));
 
         return context;
-    }
-
-    /// <summary>
-    ///     Executes the chain with detailed history tracking, capturing timing and context state for each handler.
-    /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This method extends the basic execution functionality with comprehensive history
-    ///         tracking. It captures detailed metadata about the execution process, including:
-    ///         <list type="bullet">
-    ///             <item>Total execution time for the entire chain</item>
-    ///             <item>Individual execution times for each handler</item>
-    ///             <item>Success or failure status with detailed error information</item>
-    ///             <item>Context state before and after each handler (if context cloning is enabled)</item>
-    ///             <item>Handlers that were applied and those that were skipped due to failure</item>
-    ///         </list>
-    ///     </para>
-    ///     <para>
-    ///         By default, this method captures the context state at each step by calling
-    ///         <see cref="ICloneable.Clone"/> on the context after each handler completes.
-    ///         This provides a complete audit trail of how the context changed during processing.
-    ///         For performance-sensitive scenarios or large context objects, context cloning
-    ///         can be disabled with the <paramref name="doNotCloneContext"/> parameter.
-    ///     </para>
-    ///     <para>
-    ///         The execution follows the same fail-fast principle as <see cref="Execute"/>:
-    ///         if any handler fails, execution stops immediately, and remaining handlers are
-    ///         marked as "unapplied" in the history.
-    ///     </para>
-    ///     <para>
-    ///         The returned <see cref="ContextHistoryResult{TContext}"/> provides rich
-    ///         information for debugging, performance analysis, and auditing. It can be
-    ///         logged, stored, or displayed to give insight into the execution process.
-    ///     </para>
-    ///     <para>
-    ///         Example usage:
-    ///         <code>
-    ///         var result = await executor.ExecuteWithHistory(orderContext);
-    ///         
-    ///         // Log the execution summary
-    ///         Console.WriteLine(result.PrintOutput());
-    ///         
-    ///         // Analyze handler performance
-    ///         var slowestHandler = result.History
-    ///             .OrderByDescending(h => h.Duration)
-    ///             .FirstOrDefault();
-    ///         
-    ///         if (slowestHandler != null)
-    ///         {
-    ///             Console.WriteLine($"Slowest handler: {slowestHandler.Handler}, " +
-    ///                             $"Duration: {slowestHandler.Duration}");
-    ///         }
-    ///         </code>
-    ///     </para>
-    /// </remarks>
-    /// <param name="context">
-    ///     The context to be processed. If null, a new instance will be created using
-    ///     the parameterless constructor of <typeparamref name="TContext"/>.
-    /// </param>
-    /// <param name="doNotCloneContext">
-    ///     When set to true, the context will not be cloned after each handler execution.
-    ///     This improves performance but means the history will not contain the state of
-    ///     the context at each step, only references to the final state. Default is false,
-    ///     which preserves context state history.
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     A token to monitor for cancellation requests. This token is passed to each
-    ///     handler's Handle method, allowing for cooperative cancellation.
-    /// </param>
-    /// <returns>
-    ///     A <see cref="ContextHistoryResult{TContext}"/> containing the execution result,
-    ///     timing information, and the history of handler executions and context states.
-    /// </returns>
-    public async Task<ContextHistoryResult<TContext>> ExecuteWithHistory(TContext? context,
-        bool doNotCloneContext = false,
-        CancellationToken cancellationToken = default)
-    {
-        logger?.LogInformation("Executing chain (with history)");
-
-        var output = new ContextHistoryResult<TContext>
-        {
-            Start = DateTime.UtcNow
-        };
-
-        if (context is null)
-            logger?.LogInformation("Context is null, initializing new context");
-
-        context ??= new TContext();
-
-        if (ChainHandlers.Count == 0)
-        {
-            logger?.LogWarning(NoHandlersErrorMessage);
-            output.Result = Failure<TContext>(NoHandlersErrorMessage);
-            output.End = DateTime.Now;
-            return output;
-        }
-
-        var handlerNames = ChainHandlers
-            .Select(x => x.GetType().FullName ?? "Could not get name")
-            .ToImmutableArray();
-        output.Handlers.AddRange(handlerNames);
-
-        var queue = new Queue<IChainHandler<TContext>>(ChainHandlers);
-
-        Stopwatch chainStopWatch = new();
-        chainStopWatch.Start();
-
-        Stopwatch handlerStopWatch = new();
-
-        while (queue.Count != 0)
-        {
-            var handler = queue.Dequeue();
-            var handlerName = handler.GetType().FullName ?? "Could not get name";
-
-            logger?.LogInformation("Executing next handler {HandlerName}", handlerName);
-
-            var start = DateTime.UtcNow;
-
-            handlerStopWatch.Restart();
-
-            var result = await TryAsync(() => handler.Handle(context, logger, cancellationToken));
-
-            handlerStopWatch.Stop();
-
-            logger?.LogInformation("Handler finished executing in {Elapsed}", handlerStopWatch.Elapsed.ToString("g"));
-
-            var flattenedResult = result.Flatten();
-            output.Result = flattenedResult;
-
-            if (flattenedResult.IsFailure)
-            {
-                logger?.LogError("Failed to execute {HandlerName} due to reason {Error}", handlerName, flattenedResult.Error);
-
-                output.UnappliedHandlers.Add(handlerName);
-
-                var unappliedHandlerNames = queue
-                    .Select(x => x.GetType().FullName ?? "Could not get name")
-                    .ToImmutableArray();
-                output.UnappliedHandlers.AddRange(unappliedHandlerNames);
-
-                output.End = DateTime.UtcNow;
-
-                return output;
-            }
-
-            output.History.Add(new HandlerResult<TContext>(
-                handler.GetType().FullName ?? "Could not get name",
-                doNotCloneContext ? context : (TContext)context.Clone(),
-                start,
-                DateTime.UtcNow));
-        }
-
-        logger?.LogInformation("Chain (with history) executed all handlers in {Elapsed}", chainStopWatch.Elapsed.ToString("g"));
-
-        output.End = DateTime.UtcNow;
-        return output;
     }
 }

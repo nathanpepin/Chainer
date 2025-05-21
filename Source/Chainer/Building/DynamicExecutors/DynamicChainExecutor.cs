@@ -55,7 +55,7 @@ public sealed class DynamicChainExecutor(
     ///     which is a predefined GUID used as a standard identifier for the default chain.
     ///     This method is a convenience wrapper around ExecuteChainAsync(Guid, TContext, CancellationToken).
     /// </remarks>
-    public Task<DynamicChainExecutionResult<TContext>> ExecuteDefaultChainAsync<TContext>(TContext? initialContext = null,
+    public Task<ChainExecutionResult<TContext>> ExecuteDefaultChainAsync<TContext>(TContext? initialContext = null,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new()
     {
@@ -77,7 +77,7 @@ public sealed class DynamicChainExecutor(
     ///     while still maintaining consistent identification across systems.
     ///     This method is a convenience wrapper around ExecuteChainAsync(Guid, TContext, CancellationToken).
     /// </remarks>
-    public Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(string friendlyName, TContext? initialContext = null,
+    public Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(string friendlyName, TContext? initialContext = null,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new()
     {
@@ -104,7 +104,7 @@ public sealed class DynamicChainExecutor(
     ///         </item>
     ///     </list>
     /// </remarks>
-    public async Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
+    public async Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         Guid chainId,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
@@ -112,7 +112,7 @@ public sealed class DynamicChainExecutor(
     {
         // Get chain messages
         var messagesResult = await repository.GetChainMessagesAsync(chainId, cancellationToken);
-        if (messagesResult.IsFailure) return new DynamicChainExecutionResult<TContext>(Failure<TContext>(messagesResult.Error), []);
+        if (messagesResult.IsFailure) return new ChainExecutionResult<TContext>(Failure<TContext>(messagesResult.Error), []);
 
         return await ExecuteChainAsync(messagesResult.Value, initialContext, cancellationToken);
     }
@@ -138,7 +138,7 @@ public sealed class DynamicChainExecutor(
     ///     to be pre-registered in a repository, which is useful for ad-hoc or dynamically
     ///     generated chains.
     /// </remarks>
-    public async Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
+    public async Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         IEnumerable<ChainMessage> chainMessages,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
@@ -160,7 +160,7 @@ public sealed class DynamicChainExecutor(
             .Select(x => x.ExecutionLog)
             .ToImmutableArray();
 
-        return new DynamicChainExecutionResult<TContext>(contextResult, messages);
+        return new ChainExecutionResult<TContext>(contextResult, messages);
     }
 
     /// <summary>

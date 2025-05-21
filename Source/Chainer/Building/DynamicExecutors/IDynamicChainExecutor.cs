@@ -52,7 +52,7 @@ public interface IDynamicChainExecutor
     /// }
     /// </code>
     /// </remarks>
-    Task<DynamicChainExecutionResult<TContext>> ExecuteDefaultChainAsync<TContext>(
+    Task<ChainExecutionResult<TContext>> ExecuteDefaultChainAsync<TContext>(
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new();
@@ -80,7 +80,7 @@ public interface IDynamicChainExecutor
     /// var result = await executor.ExecuteChainAsync&lt;OrderContext&gt;("OrderProcessingChain", orderContext);
     /// </code>
     /// </remarks>
-    Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
+    Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         string friendlyName,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
@@ -111,7 +111,7 @@ public interface IDynamicChainExecutor
     /// var result = await executor.ExecuteChainAsync&lt;OrderContext&gt;(chainId, orderContext);
     /// </code>
     /// </remarks>
-    Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
+    Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         Guid chainId,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
@@ -160,7 +160,7 @@ public interface IDynamicChainExecutor
     /// var result = await executor.ExecuteChainAsync&lt;OrderContext&gt;(chainMessages, orderContext);
     /// </code>
     /// </remarks>
-    Task<DynamicChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
+    Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         IEnumerable<ChainMessage> chainMessages,
         TContext? initialContext = null,
         CancellationToken cancellationToken = default)
