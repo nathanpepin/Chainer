@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Chainer.Building.Configuration;
+using Chainer.Building.Configuration.Binding;
 using Chainer.Building.Messages;
 using Chainer.Building.Repository;
 using Chainer.Utilities.Hashing;
