@@ -1,3 +1,4 @@
+using Chainer.Building.Messages;
 using Chainer.Core;
 using Chainer.Tests.ChainServices.ChainExecutor.FileContextChain;
 using Chainer.Tests.ChainServices.ChainExecutor.FileContextChain.Handlers;
@@ -55,13 +56,12 @@ public class ChainExecutorTests
         var context = new FileContext { Content = input };
 
         //Act
-        var result = await fileChain.ExecuteWithHistory(context);
+        var result = await fileChain.Execute(context);
 
         //Assert
-        result.Result.IsSuccess.Should().Be(true);
-        result.Handlers.Should().HaveCount(3);
-        result.History.Should().HaveCount(3);
-        result.UnappliedHandlers.Should().HaveCount(0);
+        result.Context.IsSuccess.Should().Be(true);
+        result.ExecutionLogs.Should().HaveCount(3);
+        result.ExecutionLogs.Select(x => x.Status == ChainMessageStatus.Completed).Should().HaveCount(3);
         context.Content.Should().Be(expectedOutput);
     }
 
@@ -76,12 +76,11 @@ public class ChainExecutorTests
         var context = new FileContext { Content = input };
 
         //Act
-        var result = await fileChain.ExecuteWithHistory(context);
+        var result = await fileChain.Execute(context);
 
         //Assert
-        result.Result.IsSuccess.Should().Be(false);
-        result.Handlers.Should().HaveCount(3);
-        result.History.Should().HaveCount(historyCount);
-        result.UnappliedHandlers.Should().HaveCount(notAppliedCount);
+        result.Context.IsSuccess.Should().Be(false);
+        result.ExecutionLogs.Should().HaveCount(3);
+        result.ExecutionLogs.Select(x => x.Status == ChainMessageStatus.Completed).Should().HaveCount(notAppliedCount);
     }
 }

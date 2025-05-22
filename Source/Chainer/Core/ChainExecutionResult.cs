@@ -60,6 +60,10 @@ namespace Chainer.Core;
 public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, ImmutableArray<ChainExecutionLog> ExecutionLogs)
     where TContext : class, ICloneable, new()
 {
+    public bool IsSuccess => Context.IsSuccess;
+
+    public bool IsFailure => Context.IsFailure;
+
     public override string ToString()
     {
         return ToString(true);
