@@ -180,6 +180,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
             logger?.LogInformation("Context is null, initializing new context");
 
         context ??= new TContext();
+        var result = Result<TContext>.Success(context);
 
         var executionLogs = ChainHandlers
             .Select(ChainExecutionLog.Create)
@@ -200,31 +201,55 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
 
         Stopwatch handlerStopWatch = new();
 
+        var errorState = false;
+
         while (queue.Count != 0)
         {
             var (handler, chainExecutionLog) = queue.Dequeue();
             var handlerName = handler.GetType().FullName ?? "Could not get name";
 
+            chainExecutionLog.ExecutedAt = DateTimeOffset.UtcNow;
+
+            if (errorState)
+            {
+                chainExecutionLog.Status = ChainMessageStatus.Skipped;
+                continue;
+            }
+
+            chainExecutionLog.ExecutedAt = DateTime.UtcNow;
+            chainExecutionLog.Status = ChainMessageStatus.Executing;
+
             logger?.LogInformation("Executing next handler {HandlerName}", handlerName);
 
             handlerStopWatch.Restart();
 
-            var result = await TryAsync(() => handler.Handle(context, logger, cancellationToken));
+            result = (await TryAsync(() => handler.Handle(result.Value, logger, cancellationToken))).Flatten();
 
             handlerStopWatch.Stop();
 
             logger?.LogInformation("Handler finished executing in {Elapsed}", handlerStopWatch.Elapsed.ToString("g"));
 
-            var flattenedResult = result.Flatten();
+            chainExecutionLog.FinishedAt = DateTime.UtcNow;
 
-            if (!flattenedResult.IsFailure) continue;
+            if (!result.IsFailure)
+            {
+                chainExecutionLog.Status = ChainMessageStatus.Completed;
+                chainExecutionLog.FinishedAt = DateTimeOffset.UtcNow;
+                continue;
+            }
 
-            logger?.LogError("Failed to execute {HandlerName} due to reason {Error}", handlerName, flattenedResult.Error);
-            return new ChainExecutionResult<TContext>(flattenedResult, executionLogs);
+            chainExecutionLog.Status = ChainMessageStatus.Failed;
+
+            errorState = true;
+
+            chainExecutionLog.ErrorMessage = result.Error;
+            chainExecutionLog.FinishedAt = DateTimeOffset.UtcNow;
+
+            logger?.LogError("Failed to execute {HandlerName} due to reason {Error}", handlerName, result.Error);
         }
 
         logger?.LogInformation("Chain executed all handlers in {Elapsed}", chainStopWatch.Elapsed.ToString("g"));
 
-        return new ChainExecutionResult<TContext>(Result<TContext>.Success(context), executionLogs);
+        return new ChainExecutionResult<TContext>(result, executionLogs);
     }
 }

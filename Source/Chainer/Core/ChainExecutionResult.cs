@@ -62,10 +62,78 @@ public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, Im
 {
     public override string ToString()
     {
+        return ToString(true);
+    }
+
+    public string ToString(bool writeArguments)
+    {
         StringBuilder output = new();
-        
-        //TODO:
-        
+
+        // Header with divider
+        output.AppendLine("----------------------------------------");
+
+        // Context type information
+        output.AppendLine($"Context: {typeof(TContext).FullName}");
+
+        // Success/failure status and error if applicable
+        output.AppendLine($"Success: {Context.IsSuccess}");
+        if (Context.IsFailure)
+        {
+            output.AppendLine($"Error: {Context.Error}");
+        }
+        else
+        {
+            output.AppendLine("Error: None");
+        }
+
+        // Execution timing information
+        var logsWithStartTime = ExecutionLogs.Where(log => log.ExecutedAt.HasValue).ToList();
+        var logsWithEndTime = ExecutionLogs.Where(log => log.FinishedAt.HasValue).ToList();
+
+        if (logsWithStartTime.Count != 0 && logsWithEndTime.Count != 0)
+        {
+            var firstHandlerStart = logsWithStartTime.Min(log => log.ExecutedAt!.Value);
+            var lastHandlerFinish = logsWithEndTime.Max(log => log.FinishedAt!.Value);
+
+            output.AppendLine($"Start: {firstHandlerStart:yyyy-MM-ddTHH:mm:ss}");
+            output.AppendLine($"End: {lastHandlerFinish:yyyy-MM-ddTHH:mm:ss}");
+
+            var executionTime = lastHandlerFinish - firstHandlerStart;
+            output.AppendLine($"Execution Time: {executionTime}");
+        }
+
+        // Handler execution summary
+        output.AppendLine("Applied Handlers");
+
+        foreach (var log in ExecutionLogs.OrderBy(l => l.ExecutionOrder))
+        {
+            var handlerName = log.HandlerTypeName;
+            // Extract just the class name for readability
+            if (handlerName.Contains("Version=") && handlerName.Contains("Culture=") && handlerName.Contains("PublicKeyToken="))
+            {
+                handlerName = handlerName.Split(',').First();
+            }
+
+            var duration = log is { FinishedAt: not null, ExecutedAt: not null }
+                ? (log.FinishedAt.Value - log.ExecutedAt.Value).ToString()
+                : "N/A";
+
+            output.AppendLine($"\t-{log.Status}: {handlerName}; Duration: {duration};");
+
+            if (!writeArguments || log.ConfigurationJson is null or "{}") continue;
+
+            output.AppendLine("\tArguments: ");
+
+            foreach (var line in log.ConfigurationJson.Split(Environment.NewLine))
+            {
+                output.Append("\t\t");
+                output.AppendLine(line);
+            }
+        }
+
+        // Footer with divider
+        output.AppendLine("----------------------------------------");
+
         return output.ToString();
     }
 }

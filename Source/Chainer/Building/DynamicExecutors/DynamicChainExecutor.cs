@@ -275,11 +275,12 @@ public sealed class DynamicChainExecutor(
 
             if (handlerResult.IsFailure)
             {
+                log.FinishedAt = DateTimeOffset.UtcNow;
                 await repository.UpdateChainExecutionLog(log, ChainMessageStatus.Failed, cancellationToken);
                 return handlerResult;
             }
 
-
+            log.FinishedAt = DateTimeOffset.UtcNow;
             await repository.UpdateChainExecutionLog(log, ChainMessageStatus.Completed, cancellationToken);
             return handlerResult;
         }
@@ -332,12 +333,12 @@ public sealed class DynamicChainExecutor(
 
         if (handler is not IChainHandler<TContext> typedHandler)
             return Failure<TContext>($"Handler {handlerType.Name} does not implement IChainHandler<{typeof(TContext).Name}>");
-
+        
         await SaveBeforeContextDataIfNeeded(handler, context, log);
         ConfigureHandlerIfNeeded<TContext>(handler, message);
 
         var result = await typedHandler.Handle(context, logger, cancellationToken);
-
+        
         SaveAfterContextDataIfNeeded(log, result, handler);
 
         return result;
