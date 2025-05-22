@@ -1,19 +1,20 @@
 namespace Chainer.Results;
 
 /// <summary>
-/// Provides extension methods to convert between different <see cref="Result"/> types or to construct a <see cref="Result{T}"/> from a non-generic <see cref="Result"/>.
+///     Provides extension methods to convert between different <see cref="Result" /> types or to construct a <see cref="Result{T}" /> from a non-generic
+///     <see cref="Result" />.
 /// </summary>
 public static class ResultConversion
 {
     /// <summary>
-    /// Converts a non-generic <see cref="Result"/> into a generic <see cref="Result{T}"/> using the specified value.
+    ///     Converts a non-generic <see cref="Result" /> into a generic <see cref="Result{T}" /> using the specified value.
     /// </summary>
     /// <typeparam name="T">The type of the value to be encapsulated in the result.</typeparam>
-    /// <param name="result">The source <see cref="Result"/> to be converted.</param>
-    /// <param name="value">The value to use for the generic <see cref="Result{T}"/>.</param>
+    /// <param name="result">The source <see cref="Result" /> to be converted.</param>
+    /// <param name="value">The value to use for the generic <see cref="Result{T}" />.</param>
     /// <returns>
-    /// A <see cref="Result{T}"/> representing success with the specified value if the source result is successful;
-    /// otherwise, a failure <see cref="Result{T}"/> containing the error from the source result.
+    ///     A <see cref="Result{T}" /> representing success with the specified value if the source result is successful;
+    ///     otherwise, a failure <see cref="Result{T}" /> containing the error from the source result.
     /// </returns>
     public static Result<T> ToResult<T>(this Result result, T value)
     {
@@ -21,14 +22,14 @@ public static class ResultConversion
     }
 
     /// <summary>
-    /// Converts a non-generic <see cref="Result"/> to a generic <see cref="Result{T}"/> using the provided value factory.
+    ///     Converts a non-generic <see cref="Result" /> to a generic <see cref="Result{T}" /> using the provided value factory.
     /// </summary>
-    /// <typeparam name="T">The type of the value contained in the returned <see cref="Result{T}"/>.</typeparam>
-    /// <param name="result">The original non-generic <see cref="Result"/> object to be converted.</param>
-    /// <param name="valueFactory">A function that produces the value for the resulting <see cref="Result{T}"/> when the original result is successful.</param>
+    /// <typeparam name="T">The type of the value contained in the returned <see cref="Result{T}" />.</typeparam>
+    /// <param name="result">The original non-generic <see cref="Result" /> object to be converted.</param>
+    /// <param name="valueFactory">A function that produces the value for the resulting <see cref="Result{T}" /> when the original result is successful.</param>
     /// <returns>
-    /// A successful <see cref="Result{T}"/> if the original result was successful, with the value produced by <paramref name="valueFactory"/>.
-    /// If the original result was not successful, a failed <see cref="Result{T}"/> with the same error as the original result.
+    ///     A successful <see cref="Result{T}" /> if the original result was successful, with the value produced by <paramref name="valueFactory" />.
+    ///     If the original result was not successful, a failed <see cref="Result{T}" /> with the same error as the original result.
     /// </returns>
     public static Result<T> ToResult<T>(this Result result, Func<T> valueFactory)
     {
@@ -36,18 +37,19 @@ public static class ResultConversion
     }
 
     /// <summary>
-    /// Converts a non-generic <see cref="Result"/> into a generic <see cref="Result{T}"/> asynchronously.
+    ///     Converts a non-generic <see cref="Result" /> into a generic <see cref="Result{T}" /> asynchronously.
     /// </summary>
-    /// <typeparam name="T">The type of the value to be wrapped in the resulting generic <see cref="Result{T}"/>.</typeparam>
-    /// <param name="result">The non-generic <see cref="Result"/> instance to convert.</param>
+    /// <typeparam name="T">The type of the value to be wrapped in the resulting generic <see cref="Result{T}" />.</typeparam>
+    /// <param name="result">The non-generic <see cref="Result" /> instance to convert.</param>
     /// <param name="valueFactory">
-    /// A function that asynchronously provides the value to be included in the resulting generic <see cref="Result{T}"/>.
-    /// This function is only invoked if the original <see cref="Result"/> is a success.
+    ///     A function that asynchronously provides the value to be included in the resulting generic <see cref="Result{T}" />.
+    ///     This function is only invoked if the original <see cref="Result" /> is a success.
     /// </param>
     /// <returns>
-    /// A <see cref="Task"/> containing the generic <see cref="Result{T}"/>. If the original <see cref="Result"/> is a success, the returned <see cref="Result{T}"/>
-    /// will also be a success, wrapping the value produced by the valueFactory. If the original <see cref="Result"/>
-    /// is a failure, the returned <see cref="Result{T}"/> will also be a failure, carrying forward the same error message.
+    ///     A <see cref="Task" /> containing the generic <see cref="Result{T}" />. If the original <see cref="Result" /> is a success, the returned
+    ///     <see cref="Result{T}" />
+    ///     will also be a success, wrapping the value produced by the valueFactory. If the original <see cref="Result" />
+    ///     is a failure, the returned <see cref="Result{T}" /> will also be a failure, carrying forward the same error message.
     /// </returns>
     public static async Task<Result<T>> ToResultAsync<T>(this Result result, Func<Task<T>> valueFactory)
     {
@@ -55,14 +57,14 @@ public static class ResultConversion
     }
 
     /// <summary>
-    /// Converts a <see cref="Result{TSource}"/> instance to a <see cref="Result{TTarget}"/> instance where TSource is derived from TTarget.
+    ///     Converts a <see cref="Result{TSource}" /> instance to a <see cref="Result{TTarget}" /> instance where TSource is derived from TTarget.
     /// </summary>
     /// <typeparam name="TSource">The type of the value in the source result.</typeparam>
     /// <typeparam name="TTarget">The type of the value to associate with the result.</typeparam>
-    /// <param name="source">The source <see cref="Result{TSource}"/> to be converted.</param>
+    /// <param name="source">The source <see cref="Result{TSource}" /> to be converted.</param>
     /// <returns>
-    /// A <see cref="Result{TTarget}"/> instance that represents either a successful result with the provided value
-    /// or a failed result with the same error as the original <see cref="Result{TSource}"/>.
+    ///     A <see cref="Result{TTarget}" /> instance that represents either a successful result with the provided value
+    ///     or a failed result with the same error as the original <see cref="Result{TSource}" />.
     /// </returns>
     public static Result<TTarget> ToResult<TSource, TTarget>(this Result<TSource> source)
         where TSource : TTarget
@@ -71,18 +73,18 @@ public static class ResultConversion
     }
 
     /// <summary>
-    /// Converts a <see cref="Result{TSource}"/> to a <see cref="Result{TTarget}"/> using the provided converter function.
+    ///     Converts a <see cref="Result{TSource}" /> to a <see cref="Result{TTarget}" /> using the provided converter function.
     /// </summary>
     /// <typeparam name="TSource">The type of the value in the source result.</typeparam>
     /// <typeparam name="TTarget">The type of the value in the resulting result.</typeparam>
     /// <param name="source">The source result to be converted.</param>
     /// <param name="converter">
-    /// A function that defines how to convert the value of type <typeparamref name="TSource"/> to <typeparamref name="TTarget"/>.
-    /// This function is called only if the source result is successful.
+    ///     A function that defines how to convert the value of type <typeparamref name="TSource" /> to <typeparamref name="TTarget" />.
+    ///     This function is called only if the source result is successful.
     /// </param>
     /// <returns>
-    /// A <see cref="Result{TTarget}"/>. If the source result is successful, the returned result contains the transformed value.
-    /// If the source result is a failure, the returned result contains the same error and exception as the source.
+    ///     A <see cref="Result{TTarget}" />. If the source result is successful, the returned result contains the transformed value.
+    ///     If the source result is a failure, the returned result contains the same error and exception as the source.
     /// </returns>
     public static Result<TTarget> Convert<TSource, TTarget>(
         this Result<TSource> source,
@@ -92,15 +94,15 @@ public static class ResultConversion
     }
 
     /// <summary>
-    /// Converts the source result to a new result with a different value type asynchronously using the specified converter function.
+    ///     Converts the source result to a new result with a different value type asynchronously using the specified converter function.
     /// </summary>
     /// <typeparam name="TSource">The type of the source value in the result.</typeparam>
     /// <typeparam name="TTarget">The type of the target value in the resulting result.</typeparam>
     /// <param name="source">The source result to convert.</param>
     /// <param name="converter">A function that asynchronously converts the value of the source result to the target type.</param>
     /// <returns>
-    /// A <see cref="Task"/> wrapping a <see cref="Result{TTarget}"/> containing the converted value if the source is successful, 
-    /// or the original error if it is a failure.
+    ///     A <see cref="Task" /> wrapping a <see cref="Result{TTarget}" /> containing the converted value if the source is successful,
+    ///     or the original error if it is a failure.
     /// </returns>
     public static async Task<Result<TTarget>> ConvertAsync<TSource, TTarget>(
         this Result<TSource> source,

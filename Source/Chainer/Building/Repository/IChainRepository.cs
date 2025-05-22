@@ -6,7 +6,7 @@ namespace Chainer.Building.Repository;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="IChainRepository"/> interface is a core component of Chainer's dynamic
+///         The <see cref="IChainRepository" /> interface is a core component of Chainer's dynamic
 ///         execution system. It serves as an abstraction layer between the chain execution logic
 ///         and the underlying storage mechanism, enabling:
 ///         <list type="bullet">
@@ -28,13 +28,13 @@ namespace Chainer.Building.Repository;
 ///     </para>
 ///     <para>
 ///         The interface provides methods for both chain definition management (storing and
-///         retrieving <see cref="ChainMessage"/> objects) and execution tracking (storing and
-///         updating <see cref="ChainExecutionLog"/> records). This separation of concerns
+///         retrieving <see cref="ChainMessage" /> objects) and execution tracking (storing and
+///         updating <see cref="ChainExecutionLog" /> records). This separation of concerns
 ///         allows for distinct storage strategies for definitions and execution logs if desired.
 ///     </para>
 ///     <para>
 ///         Chain repositories are typically registered in the dependency injection container
-///         and injected into the <see cref="DynamicChainExecutor"/>, which uses them to:
+///         and injected into the <see cref="DynamicChainExecutor" />, which uses them to:
 ///         <list type="bullet">
 ///             <item>Load chain definitions for execution</item>
 ///             <item>Record the progress and results of chain execution</item>
@@ -61,13 +61,13 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         The default chain is identified by a predefined GUID
-    ///         (<see cref="InMemoryChainRepository.DefaultChainGuid"/>), which serves as
+    ///         (<see cref="InMemoryChainRepository.DefaultChainGuid" />), which serves as
     ///         a standard identifier for the system's default chain configuration.
     ///     </para>
     ///     <para>
-    ///         This method is used by <see cref="IDynamicChainExecutor.ExecuteDefaultChainAsync{TContext}"/>
+    ///         This method is used by <see cref="IDynamicChainExecutor.ExecuteDefaultChainAsync{TContext}" />
     ///         to retrieve the default chain without requiring an explicit chain ID.
-    ///         It's a convenience method that wraps <see cref="GetChainMessagesAsync(Guid, CancellationToken)"/>
+    ///         It's a convenience method that wraps <see cref="GetChainMessagesAsync(Guid, CancellationToken)" />
     ///         with the default chain GUID.
     ///     </para>
     ///     <para>
@@ -97,8 +97,8 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method is a convenience wrapper that converts the string identifier
-    ///         to a deterministic GUID using <see cref="GuidFromString.CreateDeterministicGuid(string)"/>
-    ///         and then calls <see cref="GetChainMessagesAsync(Guid, CancellationToken)"/>.
+    ///         to a deterministic GUID using <see cref="GuidFromString.CreateDeterministicGuid(string)" />
+    ///         and then calls <see cref="GetChainMessagesAsync(Guid, CancellationToken)" />.
     ///     </para>
     ///     <para>
     ///         Using string identifiers makes chains more accessible in configuration files
@@ -133,11 +133,11 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This is the core method for retrieving chain definitions. It should return
-    ///         all <see cref="ChainMessage"/> objects associated with the specified ChainId,
+    ///         all <see cref="ChainMessage" /> objects associated with the specified ChainId,
     ///         ordered by their ExecutionOrder property.
     ///     </para>
     ///     <para>
-    ///         This method is used by the <see cref="DynamicChainExecutor"/> to retrieve
+    ///         This method is used by the <see cref="DynamicChainExecutor" /> to retrieve
     ///         chain definitions for execution. The returned messages define the sequence
     ///         of handlers to be executed in the chain.
     ///     </para>
@@ -171,7 +171,7 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method is a convenience wrapper that saves messages to the default chain
-    ///         identified by <see cref="InMemoryChainRepository.DefaultChainGuid"/>. It modifies
+    ///         identified by <see cref="InMemoryChainRepository.DefaultChainGuid" />. It modifies
     ///         the ChainId property of each message to ensure they all belong to the default chain.
     ///     </para>
     ///     <para>
@@ -182,7 +182,7 @@ public interface IChainRepository
     ///         Implementations should:
     ///         <list type="bullet">
     ///             <item>Set the ChainId property of each message to the default chain GUID</item>
-    ///             <item>Delegate to <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)"/> for actual storage</item>
+    ///             <item>Delegate to <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)" /> for actual storage</item>
     ///         </list>
     ///     </para>
     /// </remarks>
@@ -201,8 +201,8 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method is a convenience wrapper that converts the string identifier
-    ///         to a deterministic GUID using <see cref="GuidFromString.CreateDeterministicGuid(string)"/>
-    ///         and then calls <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)"/>.
+    ///         to a deterministic GUID using <see cref="GuidFromString.CreateDeterministicGuid(string)" />
+    ///         and then calls <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)" />.
     ///     </para>
     ///     <para>
     ///         Using string identifiers makes chains more accessible in configuration files
@@ -234,7 +234,7 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This is the core method for storing chain definitions. It should save
-    ///         all provided <see cref="ChainMessage"/> objects, ensuring they are associated
+    ///         all provided <see cref="ChainMessage" /> objects, ensuring they are associated
     ///         with the specified chainId.
     ///     </para>
     ///     <para>
@@ -283,14 +283,14 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method is used to record the initial state of execution logs at the
-    ///         beginning of a chain execution. It's typically called by the <see cref="DynamicChainExecutor"/>
+    ///         beginning of a chain execution. It's typically called by the <see cref="DynamicChainExecutor" />
     ///         before any handlers are executed.
     ///     </para>
     ///     <para>
     ///         The logs provided to this method usually have their status set to
-    ///         <see cref="ChainMessageStatus.Pending"/> and contain basic information about
+    ///         <see cref="ChainMessageStatus.Pending" /> and contain basic information about
     ///         the handlers to be executed. As execution progresses, these logs are updated
-    ///         using the <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)"/> methods.
+    ///         using the <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)" /> methods.
     ///     </para>
     ///     <para>
     ///         Implementations should:
@@ -322,7 +322,7 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method is used to update the status of an execution log as the handler
-    ///         progresses through its lifecycle. It's typically called by the <see cref="DynamicChainExecutor"/>
+    ///         progresses through its lifecycle. It's typically called by the <see cref="DynamicChainExecutor" />
     ///         at key points during execution:
     ///         <list type="bullet">
     ///             <item>Before execution begins (Pending → Executing)</item>
@@ -364,9 +364,9 @@ public interface IChainRepository
     /// </returns>
     /// <remarks>
     ///     <para>
-    ///         This method is an extension of <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)"/>
+    ///         This method is an extension of <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)" />
     ///         that also updates the before and after context state. It's typically used when
-    ///         a handler implements <see cref="ISaveBeforeContextData"/> and/or <see cref="ISaveAfterContextData"/>.
+    ///         a handler implements <see cref="ISaveBeforeContextData" /> and/or <see cref="ISaveAfterContextData" />.
     ///     </para>
     ///     <para>
     ///         The context state is captured as JSON strings to maintain database compatibility
@@ -482,10 +482,10 @@ public interface IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method is a convenience wrapper that retrieves execution logs for the
-    ///         default chain identified by <see cref="InMemoryChainRepository.DefaultChainGuid"/>.
+    ///         default chain identified by <see cref="InMemoryChainRepository.DefaultChainGuid" />.
     ///     </para>
     ///     <para>
-    ///         It delegates to <see cref="GetChainExecutionLogs(Guid, CancellationToken)"/>
+    ///         It delegates to <see cref="GetChainExecutionLogs(Guid, CancellationToken)" />
     ///         with the default chain GUID, providing a simpler interface for accessing
     ///         the execution history of the default chain.
     ///     </para>

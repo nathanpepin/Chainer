@@ -9,7 +9,7 @@ namespace Chainer.Core;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="ChainExecutor{TContext}"/> class serves as the primary execution engine for
+///         The <see cref="ChainExecutor{TContext}" /> class serves as the primary execution engine for
 ///         running a sequence of handlers that process a shared context. It manages the entire lifecycle
 ///         of chain execution, including:
 ///         <list type="bullet">
@@ -30,11 +30,11 @@ namespace Chainer.Core;
 ///         Two execution modes are available:
 ///         <list type="bullet">
 ///             <item>
-///                 <see cref="Execute"/> - Processes the context through all handlers and returns
+///                 <see cref="Execute" /> - Processes the context through all handlers and returns
 ///                 the final result. This is ideal for simple processing needs.
 ///             </item>
 ///             <item>
-///                 <see cref="ExecuteWithHistory"/> - Additionally tracks execution details including
+///                 <see cref="ExecuteWithHistory" /> - Additionally tracks execution details including
 ///                 timing, context state changes, and execution flow. This provides rich metadata
 ///                 for auditing, debugging, and analysis.
 ///             </item>
@@ -42,7 +42,7 @@ namespace Chainer.Core;
 ///     </para>
 ///     <para>
 ///         Handlers can be provided during construction or added incrementally using the fluent
-///         <see cref="AddHandler"/> method. The executor creates a new context instance automatically
+///         <see cref="AddHandler" /> method. The executor creates a new context instance automatically
 ///         if none is provided, allowing chains to initialize their own processing context.
 ///     </para>
 ///     <para>
@@ -66,20 +66,20 @@ namespace Chainer.Core;
 ///     </para>
 ///     <para>
 ///         For more advanced scenarios requiring dynamic configuration or persistence,
-///         consider using <see cref="DynamicChainExecutor"/> instead.
+///         consider using <see cref="DynamicChainExecutor" /> instead.
 ///     </para>
 /// </remarks>
 /// <typeparam name="TContext">
 ///     The type of context that flows through the chain. Must be a class that implements
-///     <see cref="ICloneable"/> and has a parameterless constructor.
+///     <see cref="ICloneable" /> and has a parameterless constructor.
 /// </typeparam>
 /// <param name="handlers">
 ///     Optional collection of handlers to initialize the chain. If null, an empty chain
-///     is created, and handlers can be added using <see cref="AddHandler"/>.
+///     is created, and handlers can be added using <see cref="AddHandler" />.
 /// </param>
 /// <param name="logger">
 ///     Optional logger for diagnostic information. When provided, the logger is passed
-///     to each handler's <see cref="IChainHandler{TContext}.Handle"/> method and is used
+///     to each handler's <see cref="IChainHandler{TContext}.Handle" /> method and is used
 ///     for executor-level logging.
 /// </param>
 public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>? handlers = null, ILogger? logger = null)
@@ -91,34 +91,6 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     /// <summary>
     ///     Adds a handler to the chain's execution sequence.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This method appends a handler to the end of the current execution sequence.
-    ///         Handlers are executed in the order they are added, with each receiving the
-    ///         context as modified by previous handlers.
-    ///     </para>
-    ///     <para>
-    ///         The method supports a fluent interface pattern, allowing for method chaining
-    ///         to build complex handler sequences in a readable manner:
-    ///         <code>
-    ///         var executor = new ChainExecutor&lt;OrderContext&gt;()
-    ///             .AddHandler(new ValidationHandler())
-    ///             .AddHandler(new PricingHandler())
-    ///             .AddHandler(new NotificationHandler());
-    ///         </code>
-    ///     </para>
-    ///     <para>
-    ///         Handlers can be added at any time, even after previous executions, to reuse
-    ///         and extend existing chains.
-    ///     </para>
-    /// </remarks>
-    /// <param name="handler">
-    ///     The handler to add to the chain. Must implement <see cref="IChainHandler{TContext}"/>
-    ///     for the same context type as the executor.
-    /// </param>
-    /// <returns>
-    ///     The current <see cref="ChainExecutor{TContext}"/> instance, enabling method chaining.
-    /// </returns>
     public ChainExecutor<TContext> AddHandler(IChainHandler<TContext> handler)
     {
         ChainHandlers.Add(handler);
@@ -139,7 +111,8 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     ///         <list type="number">
     ///             <item>Initialize or validate the input context</item>
     ///             <item>Verify that at least one handler exists</item>
-    ///             <item>For each handler in sequence:
+    ///             <item>
+    ///                 For each handler in sequence:
     ///                 <list type="bullet">
     ///                     <item>Call the handler's Handle method with the current context</item>
     ///                     <item>If the handler returns a failure result, stop execution and return the failure</item>
@@ -157,19 +130,19 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     ///     <para>
     ///         This method is ideal for standard processing flows where detailed execution
     ///         history is not required. For scenarios requiring execution history and metadata,
-    ///         use <see cref="ExecuteWithHistory"/> instead.
+    ///         use <see cref="ExecuteWithHistory" /> instead.
     ///     </para>
     /// </remarks>
     /// <param name="context">
     ///     The context to be processed. If null, a new instance will be created using
-    ///     the parameterless constructor of <typeparamref name="TContext"/>.
+    ///     the parameterless constructor of <typeparamref name="TContext" />.
     /// </param>
     /// <param name="cancellationToken">
     ///     A token to monitor for cancellation requests. This token is passed to each
     ///     handler's Handle method, allowing for cooperative cancellation.
     /// </param>
     /// <returns>
-    ///     A <see cref="Result{TContext}"/> containing either the successfully processed context
+    ///     A <see cref="Result{TContext}" /> containing either the successfully processed context
     ///     or information about the failure if any handler failed or threw an exception.
     /// </returns>
     public async Task<ChainExecutionResult<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)

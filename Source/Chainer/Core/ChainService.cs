@@ -7,25 +7,25 @@ namespace Chainer.Core;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="ChainService{TContext}"/> class provides an abstraction layer that integrates
+///         The <see cref="ChainService{TContext}" /> class provides an abstraction layer that integrates
 ///         the Chain of Responsibility pattern with dependency injection. It simplifies the creation
 ///         and execution of chains by:
 ///         <list type="bullet">
 ///             <item>Resolving handlers from the DI container</item>
 ///             <item>Maintaining a predefined sequence of handlers</item>
-///             <item>Providing execution methods that mirror <see cref="ChainExecutor{TContext}"/></item>
+///             <item>Providing execution methods that mirror <see cref="ChainExecutor{TContext}" /></item>
 ///             <item>Handling errors in the handler resolution process</item>
 ///         </list>
 ///     </para>
 ///     <para>
 ///         This abstract class is designed to be extended by creating concrete implementations that
-///         define specific chains. The concrete implementation only needs to override the 
-///         <see cref="ChainHandlers"/> property to specify which handler types should be
+///         define specific chains. The concrete implementation only needs to override the
+///         <see cref="ChainHandlers" /> property to specify which handler types should be
 ///         included in the chain. The base class handles the rest, including:
 ///         <list type="bullet">
 ///             <item>Resolving handler instances from the service provider</item>
 ///             <item>Validating that all required handlers are registered</item>
-///             <item>Creating and configuring a <see cref="ChainExecutor{TContext}"/></item>
+///             <item>Creating and configuring a <see cref="ChainExecutor{TContext}" /></item>
 ///             <item>Executing the chain with appropriate error handling</item>
 ///         </list>
 ///     </para>
@@ -55,22 +55,22 @@ namespace Chainer.Core;
 ///         </code>
 ///     </para>
 ///     <para>
-///         Working with a <see cref="ChainService{TContext}"/> involves:
+///         Working with a <see cref="ChainService{TContext}" /> involves:
 ///         <list type="number">
 ///             <item>Registering all handlers in the DI container</item>
 ///             <item>Registering the chain service itself in the DI container</item>
 ///             <item>Injecting the service where chain execution is needed</item>
-///             <item>Calling <see cref="Execute"/> or <see cref="ExecuteWithHistory"/> with an appropriate context</item>
+///             <item>Calling <see cref="Execute" /> or <see cref="ExecuteWithHistory" /> with an appropriate context</item>
 ///         </list>
 ///     </para>
 ///     <para>
 ///         For more advanced scenarios requiring runtime configuration or dynamic chain
-///         composition, consider using <see cref="DynamicChainExecutor"/> instead.
+///         composition, consider using <see cref="DynamicChainExecutor" /> instead.
 ///     </para>
 /// </remarks>
 /// <typeparam name="TContext">
 ///     The context type that will flow through the chain. Must be a class that
-///     implements <see cref="ICloneable"/> and has a parameterless constructor.
+///     implements <see cref="ICloneable" /> and has a parameterless constructor.
 /// </typeparam>
 /// <param name="services">
 ///     The service provider used to resolve handler instances from the DI container.
@@ -86,37 +86,6 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     /// <summary>
     ///     Defines the types of handlers that make up this chain.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This property must be overridden in derived classes to specify the sequence
-    ///         of handlers that form the chain. The order of handler types in the list determines
-    ///         the execution order when processing a context.
-    ///     </para>
-    ///     <para>
-    ///         Each type in the list should:
-    ///         <list type="bullet">
-    ///             <item>Be registered with the dependency injection container</item>
-    ///             <item>Implement <see cref="IChainHandler{TContext}"/> for the same context type</item>
-    ///             <item>Have a constructor compatible with dependency injection</item>
-    ///         </list>
-    ///     </para>
-    ///     <para>
-    ///         The base implementation returns an empty list. In a derived class, you would typically
-    ///         override this property with a concrete list of handler types:
-    ///         <code>
-    ///         protected override List&lt;Type&gt; ChainHandlers { get; } = new()
-    ///         {
-    ///             typeof(FirstHandler),
-    ///             typeof(SecondHandler),
-    ///             typeof(ThirdHandler)
-    ///         };
-    ///         </code>
-    ///     </para>
-    ///     <para>
-    ///         If using a source generator or reflection-based registration system, this property
-    ///         might be generated or populated through attributes rather than manual definition.
-    ///     </para>
-    /// </remarks>
     protected virtual List<Type> ChainHandlers { get; } = [];
 
     /// <summary>
@@ -132,33 +101,6 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     /// <summary>
     ///     Controls whether logging is enabled for this chain.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This property determines whether the injected logger is passed to the
-    ///         <see cref="ChainExecutor{TContext}"/> during execution. When set to true (default),
-    ///         logging is enabled, and diagnostic information is recorded. When set to false,
-    ///         logging is disabled.
-    ///     </para>
-    ///     <para>
-    ///         Override this property in derived classes to control logging behavior:
-    ///         <code>
-    ///         // Disable logging for performance-critical chains
-    ///         protected override bool LoggingEnabled => false;
-    ///         </code>
-    ///     </para>
-    ///     <para>
-    ///         This can be useful for:
-    ///         <list type="bullet">
-    ///             <item>Reducing log volume in high-throughput scenarios</item>
-    ///             <item>Improving performance for performance-critical chains</item>
-    ///             <item>Implementing environment-specific logging behavior</item>
-    ///         </list>
-    ///     </para>
-    /// </remarks>
-    /// <returns>
-    ///     True if logging should be enabled; otherwise, false. The default implementation
-    ///     returns true.
-    /// </returns>
     protected virtual bool LoggingEnabled => true;
 
     /// <summary>
@@ -166,8 +108,8 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         This method resolves the handlers specified in <see cref="ChainHandlers"/> from
-    ///         the dependency injection container, creates a <see cref="ChainExecutor{TContext}"/>,
+    ///         This method resolves the handlers specified in <see cref="ChainHandlers" /> from
+    ///         the dependency injection container, creates a <see cref="ChainExecutor{TContext}" />,
     ///         and executes the chain with the provided context.
     ///     </para>
     ///     <para>
@@ -175,7 +117,7 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     ///         <list type="number">
     ///             <item>Resolves handler instances from the DI container if not already resolved</item>
     ///             <item>Verifies that all handlers are properly registered and resolved</item>
-    ///             <item>Creates a <see cref="ChainExecutor{TContext}"/> with the resolved handlers</item>
+    ///             <item>Creates a <see cref="ChainExecutor{TContext}" /> with the resolved handlers</item>
     ///             <item>Executes the chain with the provided context</item>
     ///             <item>Returns the result of the chain execution</item>
     ///         </list>
@@ -186,7 +128,7 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     ///         when all required handlers are available.
     ///     </para>
     ///     <para>
-    ///         This method delegates the actual execution to <see cref="ChainExecutor{TContext}.Execute"/>,
+    ///         This method delegates the actual execution to <see cref="ChainExecutor{TContext}.Execute" />,
     ///         providing a consistent execution model while handling the DI resolution aspects.
     ///     </para>
     /// </remarks>
@@ -197,16 +139,14 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     ///     A token for monitoring cancellation requests during execution.
     /// </param>
     /// <returns>
-    ///     A <see cref="Result{TContext}"/> containing either the successfully processed context
+    ///     A <see cref="Result{TContext}" /> containing either the successfully processed context
     ///     or information about the failure if handler resolution or execution failed.
     /// </returns>
     public async Task<ChainExecutionResult<TContext>> Execute(TContext? context, CancellationToken cancellationToken = default)
     {
         if (GetRegisteredHandlers() is not (false, _) registration)
-        {
             return await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
                 .Execute(context, cancellationToken);
-        }
 
         var executionLogs = ChainHandlers
             .Select(ChainExecutionLog.Create<TContext>)
@@ -220,33 +160,6 @@ public abstract class ChainService<TContext>(IServiceProvider services, ILogger<
     /// <summary>
     ///     Resolves and validates handler instances from the dependency injection container.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This private method handles the resolution of handler instances from the DI container
-    ///         based on the types specified in <see cref="ChainHandlers"/>. It ensures that:
-    ///         <list type="bullet">
-    ///             <item>All required handlers are registered in the DI container</item>
-    ///             <item>All resolved services implement the correct handler interface</item>
-    ///             <item>Handler instances are cached for reuse across multiple executions</item>
-    ///         </list>
-    ///     </para>
-    ///     <para>
-    ///         The method is called lazily during the first execution, and the results are cached
-    ///         for subsequent calls, ensuring that handlers are only resolved once.
-    ///     </para>
-    ///     <para>
-    ///         If any handler type cannot be resolved or does not implement the expected interface,
-    ///         the method returns a failure result with an error message identifying the problematic
-    ///         handler type.
-    ///     </para>
-    /// </remarks>
-    /// <returns>
-    ///     A tuple containing:
-    ///     <list type="bullet">
-    ///         <item>A boolean indicating whether all handlers were successfully resolved</item>
-    ///         <item>An error message if resolution failed, or null if successful</item>
-    ///     </list>
-    /// </returns>
     private (bool Success, string? Error) GetRegisteredHandlers()
     {
         if (Handlers.Count != 0) return (true, null);

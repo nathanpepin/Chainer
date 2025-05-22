@@ -7,7 +7,7 @@ namespace Chainer.Core;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="IChainHandler{TContext}"/> interface represents a fundamental building block
+///         The <see cref="IChainHandler{TContext}" /> interface represents a fundamental building block
 ///         in the Chainer library's implementation of the Chain of Responsibility pattern. Each handler
 ///         represents a discrete processing step that can examine, modify, or validate a context object
 ///         as it flows through a processing chain.
@@ -29,7 +29,7 @@ namespace Chainer.Core;
 ///         </list>
 ///     </para>
 ///     <para>
-///         Handlers communicate success or failure through the <see cref="Result{TContext}"/> return type,
+///         Handlers communicate success or failure through the <see cref="Result{TContext}" /> return type,
 ///         which encapsulates either a successful result with the modified context or a failure with
 ///         an error message. This approach eliminates the need for exception handling while providing
 ///         a clear path for error propagation.
@@ -72,15 +72,15 @@ namespace Chainer.Core;
 ///         </code>
 ///     </para>
 ///     <para>
-///         Handlers can be composed into chains using <see cref="ChainExecutor{TContext}"/> or
-///         <see cref="ChainService{TContext}"/>, or dynamically configured using
-///         <see cref="DynamicChainExecutor"/>. For handlers that require configuration, consider
-///         implementing <see cref="IConfigurableChainHandler{TContext}"/> instead.
+///         Handlers can be composed into chains using <see cref="ChainExecutor{TContext}" /> or
+///         <see cref="ChainService{TContext}" />, or dynamically configured using
+///         <see cref="DynamicChainExecutor" />. For handlers that require configuration, consider
+///         implementing <see cref="IConfigurableChainHandler{TContext}" /> instead.
 ///     </para>
 /// </remarks>
 /// <typeparam name="TContext">
 ///     The type of context object that this handler can process. Must be a class that
-///     implements <see cref="ICloneable"/> and has a parameterless constructor.
+///     implements <see cref="ICloneable" /> and has a parameterless constructor.
 /// </typeparam>
 public interface IChainHandler<TContext> where TContext : class, ICloneable, new()
 {
@@ -180,7 +180,7 @@ public interface IChainHandler<TContext> where TContext : class, ICloneable, new
     ///     cancellation patterns.
     /// </param>
     /// <returns>
-    ///     A task that resolves to a <see cref="Result{TContext}"/> containing either:
+    ///     A task that resolves to a <see cref="Result{TContext}" /> containing either:
     ///     <list type="bullet">
     ///         <item>A success result with the processed context (possibly modified), or</item>
     ///         <item>A failure result with an error message explaining why processing failed</item>

@@ -1,63 +1,49 @@
-using Chainer.Building.DynamicExecutors;
-
 namespace Chainer.Building.Messages;
 
 /// <summary>
-///     Represents a detailed execution log for a single handler in a chain, capturing the 
-///     complete lifecycle and state changes during processing.
+///     Represents a detailed execution log for a specific handler in a chain, recording
+///     lifecycle events, state transitions, and execution outcomes.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="ChainExecutionLog"/> class is a central component in Chainer's execution 
-///         tracking and monitoring system. It captures detailed information about a handler's execution,
-///         including timing, status changes, handler information, and context state before and after processing.
+///         The <see cref="ChainExecutionLog" /> encapsulates information about the operation
+///         and status of individual handlers during the processing of a chain in the Chainer framework.
+///         This includes metadata such as execution timestamps, configuration details, error messages,
+///         and the serialized state of the execution context.
 ///     </para>
 ///     <para>
-///         This class serves multiple important purposes:
+///         Key benefits and purposes include:
 ///         <list type="bullet">
-///             <item>Auditing the chain execution process for compliance or debugging</item>
-///             <item>Monitoring performance by tracking execution times</item>
-///             <item>Visualizing the flow of data through a chain</item>
-///             <item>Troubleshooting failed executions by identifying which handler failed and why</item>
-///             <item>Analyzing the impact of each handler on the context state</item>
+///             <item>Facilitating process visibility by capturing step-level execution details</item>
+///             <item>Providing insights for debugging and diagnosing failures</item>
+///             <item>Supporting performance analysis by logging detailed timing information</item>
+///             <item>Tracking impact of changes on execution state for auditing and compliance</item>
+///             <item>Enabling persistence or downstream processing of detailed execution logs</item>
 ///         </list>
 ///     </para>
 ///     <para>
-///         Execution logs are typically created by the <see cref="DynamicChainExecutor"/> when 
-///         processing a chain and are associated with chain repository implementations
-///         for persistence. The log's lifecycle follows the handler's execution:
+///         Each <see cref="ChainExecutionLog" /> instance is associated with a specific handler
+///         invocation within a processing chain, and its stages of execution typically include:
 ///         <list type="number">
-///             <item>Created with status <see cref="ChainMessageStatus.Pending"/></item>
-///             <item>Updated to <see cref="ChainMessageStatus.Executing"/> when handler starts</item>
-///             <item>Updated to final status (Completed, Failed, Error, or Skipped) when done</item>
+///             <item>Initialization prior to handler execution</item>
+///             <item>Status updates when execution starts or progresses</item>
+///             <item>Finalization upon success, failure, or error</item>
 ///         </list>
 ///     </para>
 ///     <para>
-///         Context data serialization (BeforeJson and AfterJson) is performed automatically
-///         for handlers that implement <see cref="ISaveBeforeContextData"/> and/or
-///         <see cref="ISaveAfterContextData"/>.
+///         Serialization of context properties (via <see cref="BeforeJson" /> and <see cref="AfterJson" />)
+///         is automatically performed for handlers utilizing supported configuration interfaces, providing
+///         a full snapshot of the execution state before and after processing.
 ///     </para>
 ///     <para>
-///         The class is specifically designed to be database-friendly, with properties that map naturally
-///         to database columns. It uses simple scalar types (Guid, string, DateTimeOffset, etc.) and
-///         serializes complex objects to JSON strings, making it compatible with most relational and
-///         document database systems. This design allows for:
-///         <list type="bullet">
-///             <item>Efficient storage and retrieval of execution history</item>
-///             <item>Direct querying of execution status and metadata without deserializing</item>
-///             <item>Simple implementation of repository patterns for various database technologies</item>
-///             <item>Optimized indexing on key fields like ChainId and Status</item>
-///             <item>Flexible storage approaches - from SQL Server tables to document collections</item>
-///         </list>
-///         Database implementations can use the structured fields for filtering and sorting, while
-///         keeping the serialized context state (BeforeJson/AfterJson) as opaque data for storage
-///         and retrieval.
+///         The class is designed for extensibility and database compatibility, ensuring its properties
+///         naturally align with storage and analytics operations.
 ///     </para>
 /// </remarks>
 public class ChainExecutionLog
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ChainExecutionLog"/> class
+    ///     Initializes a new instance of the <see cref="ChainExecutionLog" /> class
     ///     with default values.
     /// </summary>
     /// <remarks>
@@ -69,23 +55,9 @@ public class ChainExecutionLog
     }
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ChainExecutionLog"/> class
-    ///     using values from a <see cref="ChainMessage"/>.
+    ///     Initializes a new instance of the <see cref="ChainExecutionLog" /> class
+    ///     using values from a <see cref="ChainMessage" />.
     /// </summary>
-    /// <param name="message">
-    ///     The chain message containing information about the handler to be executed.
-    ///     This provides the initial values for the log record.
-    /// </param>
-    /// <remarks>
-    ///     This constructor is typically used by the <see cref="DynamicChainExecutor"/> 
-    ///     when preparing to execute a chain. It initializes the log with identifying
-    ///     information from the message and sets the initial status to 
-    ///     <see cref="ChainMessageStatus.Pending"/>.
-    ///     
-    ///     Note that <see cref="BeforeJson"/> is initially set to the same value as 
-    ///     <see cref="ConfigurationJson"/>, which will typically be overwritten during
-    ///     execution if the handler implements <see cref="ISaveBeforeContextData"/>.
-    /// </remarks>
     public ChainExecutionLog(ChainMessage message)
     {
         Id = message.Id;
@@ -98,39 +70,11 @@ public class ChainExecutionLog
         Status = ChainMessageStatus.Pending;
     }
 
-    public static ChainExecutionLog Create<TContext>(IChainHandler<TContext> chainHandler, int order)
-        where TContext : class, ICloneable, new()
-    {
-        return new ChainExecutionLog
-        {
-            Id = Guid.Empty,
-            ChainId = Guid.Empty,
-            ExecutionOrder = order,
-            HandlerTypeName = chainHandler.GetType().FullName!,
-            Status = ChainMessageStatus.NotStarted,
-            ContextTypeName = typeof(TContext).AssemblyQualifiedName!,
-        };
-    }
-
-    public static ChainExecutionLog Create<TContext>(Type type, int order)
-        where TContext : class, ICloneable, new()
-    {
-        return new ChainExecutionLog
-        {
-            Id = Guid.Empty,
-            ChainId = Guid.Empty,
-            ExecutionOrder = order,
-            HandlerTypeName = type.FullName!,
-            Status = ChainMessageStatus.NotStarted,
-            ContextTypeName = typeof(TContext).AssemblyQualifiedName!,
-        };
-    }
-
     /// <summary>
     ///     Gets or sets the unique identifier for this execution log record.
     /// </summary>
     /// <remarks>
-    ///     This ID is typically derived from the associated <see cref="ChainMessage.Id"/>
+    ///     This ID is typically derived from the associated <see cref="ChainMessage.Id" />
     ///     to maintain a correlation between messages and their execution logs.
     ///     It serves as the primary key in database implementations.
     /// </remarks>
@@ -165,7 +109,7 @@ public class ChainExecutionLog
     /// </summary>
     /// <remarks>
     ///     This is typically the assembly-qualified name of the handler class,
-    ///     which allows resolving the type at runtime using <see cref="Type.GetType(string)"/>.
+    ///     which allows resolving the type at runtime using <see cref="Type.GetType(string)" />.
     ///     For display purposes, you may want to extract just the class name portion.
     ///     In database implementations, this field can be used for filtering and reporting
     ///     on specific handler types.
@@ -176,7 +120,7 @@ public class ChainExecutionLog
     ///     Gets or sets the JSON-serialized configuration that was provided to the handler.
     /// </summary>
     /// <remarks>
-    ///     For configurable handlers (those implementing <see cref="IConfigurableChainHandler{TContext}"/>),
+    ///     For configurable handlers (those implementing <see cref="IConfigurableChainHandler{TContext}" />),
     ///     this contains the configuration data that was passed to the handler's Configure method.
     ///     This can be useful for auditing what configuration values were active during execution.
     ///     Storing configuration as a JSON string allows for schema-flexible storage in both relational
@@ -187,30 +131,6 @@ public class ChainExecutionLog
     /// <summary>
     ///     Gets or sets the current status of the handler execution.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This status field tracks the handler through its execution lifecycle:
-    ///         <list type="bullet">
-    ///             <item><see cref="ChainMessageStatus.NotStarted"/> - Initial state before being queued</item>
-    ///             <item><see cref="ChainMessageStatus.Pending"/> - Queued for execution but not yet started</item>
-    ///             <item><see cref="ChainMessageStatus.Executing"/> - Currently being executed</item>
-    ///             <item><see cref="ChainMessageStatus.Completed"/> - Successfully completed execution</item>
-    ///             <item><see cref="ChainMessageStatus.Failed"/> - Execution failed (controlled failure)</item>
-    ///             <item><see cref="ChainMessageStatus.Error"/> - Execution resulted in an unhandled exception</item>
-    ///             <item><see cref="ChainMessageStatus.Skipped"/> - Not executed due to failure of previous handler</item>
-    ///         </list>
-    ///     </para>
-    ///     <para>
-    ///         The DynamicChainExecutor updates this status throughout the execution process,
-    ///         and it can be used to track the progression of handlers through the chain.
-    ///     </para>
-    ///     <para>
-    ///         From a database perspective, this enumeration field is ideal for indexing and filtering,
-    ///         allowing for efficient queries like "find all failed handlers" or "count completed executions."
-    ///         It can be stored as an integer in relational databases for performance while maintaining
-    ///         semantic meaning through the enum.
-    ///     </para>
-    /// </remarks>
     public ChainMessageStatus Status { get; set; } = ChainMessageStatus.NotStarted;
 
     /// <summary>
@@ -218,7 +138,7 @@ public class ChainExecutionLog
     /// </summary>
     /// <remarks>
     ///     This is set by the chain executor just before invoking the handler.
-    ///     It can be used with <see cref="FinishedAt"/> to calculate execution duration.
+    ///     It can be used with <see cref="FinishedAt" /> to calculate execution duration.
     ///     Using DateTimeOffset provides timezone-aware timestamps that avoid ambiguity
     ///     when stored in databases and analyzed across different systems.
     /// </remarks>
@@ -228,9 +148,9 @@ public class ChainExecutionLog
     ///     Gets or sets the timestamp when the handler completed execution.
     /// </summary>
     /// <remarks>
-    ///     This is set by the chain executor after the handler completes, 
+    ///     This is set by the chain executor after the handler completes,
     ///     regardless of whether it succeeded or failed.
-    ///     When used with <see cref="ExecutedAt"/>, it provides accurate timing information
+    ///     When used with <see cref="ExecutedAt" />, it provides accurate timing information
     ///     for performance analysis and monitoring.
     ///     In database implementations, these timestamp fields enable time-range queries
     ///     and performance analysis for specific periods.
@@ -241,8 +161,8 @@ public class ChainExecutionLog
     ///     Gets or sets the error message if the handler execution failed.
     /// </summary>
     /// <remarks>
-    ///     This field is populated when <see cref="Status"/> is 
-    ///     <see cref="ChainMessageStatus.Failed"/> or <see cref="ChainMessageStatus.Error"/>.
+    ///     This field is populated when <see cref="Status" /> is
+    ///     <see cref="ChainMessageStatus.Failed" /> or <see cref="ChainMessageStatus.Error" />.
     ///     It contains the error message from the Result or Exception that caused the failure,
     ///     providing valuable diagnostic information.
     ///     When stored in a database, this field enables text searching for specific error patterns
@@ -256,7 +176,7 @@ public class ChainExecutionLog
     /// <remarks>
     ///     This is the assembly-qualified name of the context class,
     ///     which is useful for determining what type of data was being processed
-    ///     and for correctly deserializing the <see cref="BeforeJson"/> and <see cref="AfterJson"/>
+    ///     and for correctly deserializing the <see cref="BeforeJson" /> and <see cref="AfterJson" />
     ///     values if needed.
     ///     In a database context, this field allows for filtering and reporting on executions
     ///     by context type.
@@ -269,7 +189,7 @@ public class ChainExecutionLog
     /// <remarks>
     ///     <para>
     ///         This field is only populated when the handler implements the
-    ///         <see cref="ISaveBeforeContextData"/> interface. It contains a JSON
+    ///         <see cref="ISaveBeforeContextData" /> interface. It contains a JSON
     ///         representation of the context object just before the handler processes it.
     ///     </para>
     ///     <para>
@@ -295,11 +215,11 @@ public class ChainExecutionLog
     /// <remarks>
     ///     <para>
     ///         This field is only populated when the handler implements the
-    ///         <see cref="ISaveAfterContextData"/> interface. It contains a JSON
+    ///         <see cref="ISaveAfterContextData" /> interface. It contains a JSON
     ///         representation of the context object after the handler has processed it.
     ///     </para>
     ///     <para>
-    ///         When used with <see cref="BeforeJson"/>, it provides a complete before/after
+    ///         When used with <see cref="BeforeJson" />, it provides a complete before/after
     ///         view of the context, showing exactly what changes the handler made.
     ///         This is particularly useful for:
     ///         <list type="bullet">
@@ -317,4 +237,37 @@ public class ChainExecutionLog
     ///     </para>
     /// </remarks>
     public string? AfterJson { get; set; }
+
+
+    /// <summary>
+    ///     Creates a new instance of the <see cref="ChainExecutionLog" /> class
+    ///     initialized with the specified chain handler and execution order.
+    /// </summary>
+    public static ChainExecutionLog Create<TContext>(IChainHandler<TContext> chainHandler, int order)
+        where TContext : class, ICloneable, new()
+    {
+        return new ChainExecutionLog
+        {
+            Id = Guid.Empty,
+            ChainId = Guid.Empty,
+            ExecutionOrder = order,
+            HandlerTypeName = chainHandler.GetType().FullName!,
+            Status = ChainMessageStatus.NotStarted,
+            ContextTypeName = typeof(TContext).AssemblyQualifiedName!
+        };
+    }
+
+    public static ChainExecutionLog Create<TContext>(Type type, int order)
+        where TContext : class, ICloneable, new()
+    {
+        return new ChainExecutionLog
+        {
+            Id = Guid.Empty,
+            ChainId = Guid.Empty,
+            ExecutionOrder = order,
+            HandlerTypeName = type.FullName!,
+            Status = ChainMessageStatus.NotStarted,
+            ContextTypeName = typeof(TContext).AssemblyQualifiedName!
+        };
+    }
 }

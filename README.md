@@ -2,7 +2,8 @@
 
 ## What is Chainer?
 
-Chainer provides an abstraction that makes it easy to execute a series of actions on a given context in sequence. If an action fails internally or during execution, the error message is caught and reflected in the result.
+Chainer provides an abstraction that makes it easy to execute a series of actions on a given context in sequence. If an action fails internally or
+during execution, the error message is caught and reflected in the result.
 
 The primary use case for the library is defining a series of processes that should apply to some context with built-in error handling.
 
@@ -10,11 +11,14 @@ The primary use case for the library is defining a series of processes that shou
 
 Chainer offers two primary approaches to chain execution:
 
-1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with minimal configuration. Ideal for direct application code where chains are defined at development time.
+1. **Lightweight Chain Executor** - A simple, in-memory chain executor for straightforward sequential processing with minimal configuration. Ideal for
+   direct application code where chains are defined at development time.
 
-2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external sources like databases or configuration files. Perfect for applications that need runtime chain configuration without code changes.
+2. **Dynamic Chain Execution** - A more powerful, configurable system that can load chain definitions from external sources like databases or
+   configuration files. Perfect for applications that need runtime chain configuration without code changes.
 
-Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the dynamic executor for flexibility and runtime configurability.
+Choose the approach that best fits your needs - the lightweight executor for simplicity and direct control, or the dynamic executor for flexibility
+and runtime configurability.
 
 ## Lightweight Chain Execution
 
@@ -222,6 +226,7 @@ var historyResult = await pricingChain.ExecuteWithHistory(context);
 ```
 
 This approach is ideal for scenarios where:
+
 - Handlers have dependencies that should be injected
 - Chain definitions are static and known at compile-time
 - You want to leverage the DI container for handler lifetime management

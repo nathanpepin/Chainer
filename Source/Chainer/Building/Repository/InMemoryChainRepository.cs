@@ -1,12 +1,12 @@
 namespace Chainer.Building.Repository;
 
 /// <summary>
-///     A thread-safe, in-memory implementation of the <see cref="IChainRepository"/> interface
+///     A thread-safe, in-memory implementation of the <see cref="IChainRepository" /> interface
 ///     that stores chain messages and execution logs in concurrent dictionaries.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="InMemoryChainRepository"/> provides a lightweight, non-persistent
+///         The <see cref="InMemoryChainRepository" /> provides a lightweight, non-persistent
 ///         implementation of the chain repository interface. It stores all data in memory
 ///         using thread-safe concurrent collections, making it suitable for:
 ///         <list type="bullet">
@@ -31,7 +31,7 @@ namespace Chainer.Building.Repository;
 ///     <para>
 ///         Key characteristics of this implementation include:
 ///         <list type="bullet">
-///             <item>Thread-safety through the use of <see cref="ConcurrentDictionary{TKey, TValue}"/></item>
+///             <item>Thread-safety through the use of <see cref="ConcurrentDictionary{TKey, TValue}" /></item>
 ///             <item>Minimal overhead compared to database operations</item>
 ///             <item>Simplified implementation that focuses on correct behavior rather than persistence</item>
 ///             <item>Additive approach to saving messages (new messages are added to existing ones)</item>
@@ -52,8 +52,8 @@ public sealed class InMemoryChainRepository : IChainRepository
     ///     <para>
     ///         This predefined GUID serves as a well-known identifier for the default chain,
     ///         ensuring consistent behavior across different repository implementations.
-    ///         Methods that work with the default chain, such as <see cref="GetDefaultChainMessagesAsync"/>
-    ///         and <see cref="SaveToDefaultChainMessagesAsync"/>, use this GUID internally.
+    ///         Methods that work with the default chain, such as <see cref="GetDefaultChainMessagesAsync" />
+    ///         and <see cref="SaveToDefaultChainMessagesAsync" />, use this GUID internally.
     ///     </para>
     ///     <para>
     ///         The use of a consistent GUID rather than a string name or other identifier
@@ -73,11 +73,11 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This dictionary serves as the primary storage for chain definitions. Each key
-    ///         is a chain ID (GUID), and each value is a list of <see cref="ChainMessage"/>
+    ///         is a chain ID (GUID), and each value is a list of <see cref="ChainMessage" />
     ///         objects that define the handlers in that chain.
     ///     </para>
     ///     <para>
-    ///         The use of <see cref="ConcurrentDictionary{TKey, TValue}"/> ensures thread-safety
+    ///         The use of <see cref="ConcurrentDictionary{TKey, TValue}" /> ensures thread-safety
     ///         for operations that might occur simultaneously from multiple threads, such as
     ///         reading and writing chain definitions.
     ///     </para>
@@ -95,11 +95,11 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This dictionary serves as the primary storage for execution history. Each key
-    ///         is a chain ID (GUID), and each value is a list of <see cref="ChainExecutionLog"/>
+    ///         is a chain ID (GUID), and each value is a list of <see cref="ChainExecutionLog" />
     ///         objects that record the execution of handlers in that chain.
     ///     </para>
     ///     <para>
-    ///         The use of <see cref="ConcurrentDictionary{TKey, TValue}"/> ensures thread-safety
+    ///         The use of <see cref="ConcurrentDictionary{TKey, TValue}" /> ensures thread-safety
     ///         for operations that might occur simultaneously from multiple threads, such as
     ///         updating execution status while retrieving execution history.
     ///     </para>
@@ -121,8 +121,8 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// </returns>
     /// <remarks>
     ///     <para>
-    ///         This method simply delegates to <see cref="GetChainMessagesAsync(Guid, CancellationToken)"/>
-    ///         with <see cref="DefaultChainGuid"/> as the chain ID. It provides a convenient
+    ///         This method simply delegates to <see cref="GetChainMessagesAsync(Guid, CancellationToken)" />
+    ///         with <see cref="DefaultChainGuid" /> as the chain ID. It provides a convenient
     ///         way to access the default chain without needing to know its specific GUID.
     ///     </para>
     ///     <para>
@@ -149,8 +149,8 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method converts the string identifier to a deterministic GUID using
-    ///         <see cref="GuidFromString.CreateDeterministicGuid(string)"/> and then
-    ///         delegates to <see cref="GetChainMessagesAsync(Guid, CancellationToken)"/>.
+    ///         <see cref="GuidFromString.CreateDeterministicGuid(string)" /> and then
+    ///         delegates to <see cref="GetChainMessagesAsync(Guid, CancellationToken)" />.
     ///     </para>
     ///     <para>
     ///         The conversion to a deterministic GUID ensures that the same string always
@@ -181,7 +181,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This is the core method for retrieving chain definitions. It checks if the
-    ///         specified chain ID exists in the <see cref="Messages"/> dictionary and returns
+    ///         specified chain ID exists in the <see cref="Messages" /> dictionary and returns
     ///         the associated list of messages.
     ///     </para>
     ///     <para>
@@ -222,8 +222,8 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method ensures that all provided messages have their ChainId property
-    ///         set to <see cref="DefaultChainGuid"/> and then delegates to
-    ///         <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)"/>.
+    ///         set to <see cref="DefaultChainGuid" /> and then delegates to
+    ///         <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)" />.
     ///     </para>
     ///     <para>
     ///         This method modifies the ChainId property of each message, ensuring they
@@ -256,8 +256,8 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method converts the string identifier to a deterministic GUID using
-    ///         <see cref="GuidFromString.CreateDeterministicGuid(string)"/> and then
-    ///         delegates to <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)"/>.
+    ///         <see cref="GuidFromString.CreateDeterministicGuid(string)" /> and then
+    ///         delegates to <see cref="SaveChainMessagesAsync(Guid, IEnumerable{ChainMessage}, CancellationToken)" />.
     ///     </para>
     ///     <para>
     ///         The conversion to a deterministic GUID ensures that the same string always
@@ -289,7 +289,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This is the core method for storing chain definitions. It adds the provided
-    ///         messages to the <see cref="Messages"/> dictionary, using the specified chain ID
+    ///         messages to the <see cref="Messages" /> dictionary, using the specified chain ID
     ///         as the key.
     ///     </para>
     ///     <para>
@@ -302,7 +302,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     ///         replacing existing definitions.
     ///     </para>
     ///     <para>
-    ///         The method uses <see cref="ConcurrentDictionary{TKey, TValue}"/>
+    ///         The method uses <see cref="ConcurrentDictionary{TKey, TValue}" />
     ///         to ensure thread-safety when updating the dictionary. This allows multiple
     ///         threads to save messages concurrently without conflicts.
     ///     </para>
@@ -352,7 +352,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// </returns>
     /// <remarks>
     ///     <para>
-    ///         This method saves the provided execution logs to the <see cref="ExecutionLogs"/>
+    ///         This method saves the provided execution logs to the <see cref="ExecutionLogs" />
     ///         dictionary, using the ChainId property of each log as the key.
     ///     </para>
     ///     <para>
@@ -364,7 +364,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     ///         </list>
     ///     </para>
     ///     <para>
-    ///         This implementation uses <see cref="ConcurrentDictionary{TKey, TValue}.TryAdd"/>
+    ///         This implementation uses <see cref="ConcurrentDictionary{TKey, TValue}.TryAdd" />
     ///         to ensure thread-safety when creating new lists for chain IDs. Once a list exists,
     ///         adding to it is also thread-safe thanks to the concurrent dictionary's behavior.
     ///     </para>
@@ -415,7 +415,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// </returns>
     /// <remarks>
     ///     <para>
-    ///         This method updates the <see cref="ChainExecutionLog.Status"/> property of the
+    ///         This method updates the <see cref="ChainExecutionLog.Status" /> property of the
     ///         provided log to the specified value.
     ///     </para>
     ///     <para>
@@ -459,19 +459,19 @@ public sealed class InMemoryChainRepository : IChainRepository
     ///     <para>
     ///         This method updates the provided log with new status and context data:
     ///         <list type="bullet">
-    ///             <item>The <see cref="ChainExecutionLog.Status"/> property is set to the specified value</item>
-    ///             <item>The <see cref="ChainExecutionLog.BeforeJson"/> property is set to the specified value</item>
-    ///             <item>The <see cref="ChainExecutionLog.AfterJson"/> property is set to the specified value</item>
+    ///             <item>The <see cref="ChainExecutionLog.Status" /> property is set to the specified value</item>
+    ///             <item>The <see cref="ChainExecutionLog.BeforeJson" /> property is set to the specified value</item>
+    ///             <item>The <see cref="ChainExecutionLog.AfterJson" /> property is set to the specified value</item>
     ///         </list>
     ///     </para>
     ///     <para>
-    ///         As with <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)"/>,
+    ///         As with <see cref="UpdateChainExecutionLog(ChainExecutionLog, ChainMessageStatus, CancellationToken)" />,
     ///         this implementation takes advantage of reference sharing to perform the update
     ///         directly on the object, without needing to locate it in storage.
     ///     </para>
     ///     <para>
-    ///         This method is typically used when a handler implements <see cref="ISaveBeforeContextData"/>
-    ///         and/or <see cref="ISaveAfterContextData"/> to track context state changes.
+    ///         This method is typically used when a handler implements <see cref="ISaveBeforeContextData" />
+    ///         and/or <see cref="ISaveAfterContextData" /> to track context state changes.
     ///     </para>
     ///     <para>
     ///         The cancellation token is not used in this implementation since the operation
@@ -502,7 +502,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// <remarks>
     ///     <para>
     ///         This method retrieves all execution logs associated with the specified chain ID
-    ///         from the <see cref="ExecutionLogs"/> dictionary.
+    ///         from the <see cref="ExecutionLogs" /> dictionary.
     ///     </para>
     ///     <para>
     ///         If the chain ID is not found in the dictionary, an empty list is returned.
@@ -510,7 +510,7 @@ public sealed class InMemoryChainRepository : IChainRepository
     ///         logs is not considered an error condition.
     ///     </para>
     ///     <para>
-    ///         This implementation uses <see cref="ConcurrentDictionary{TKey, TValue}.TryGetValue"/>
+    ///         This implementation uses <see cref="ConcurrentDictionary{TKey, TValue}.TryGetValue" />
     ///         to safely attempt to retrieve the logs list, returning an empty list if the key
     ///         is not found.
     ///     </para>
@@ -533,8 +533,8 @@ public sealed class InMemoryChainRepository : IChainRepository
     /// </returns>
     /// <remarks>
     ///     <para>
-    ///         This method simply delegates to <see cref="GetChainExecutionLogs(Guid, CancellationToken)"/>
-    ///         with <see cref="DefaultChainGuid"/> as the chain ID. It provides a convenient
+    ///         This method simply delegates to <see cref="GetChainExecutionLogs(Guid, CancellationToken)" />
+    ///         with <see cref="DefaultChainGuid" /> as the chain ID. It provides a convenient
     ///         way to access the execution logs for the default chain without needing to know
     ///         its specific GUID.
     ///     </para>

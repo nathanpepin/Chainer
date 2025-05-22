@@ -1,5 +1,3 @@
-using Chainer.Building.DynamicExecutors;
-
 namespace Chainer.Building.Messages;
 
 /// <summary>
@@ -8,7 +6,7 @@ namespace Chainer.Building.Messages;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The <see cref="ChainMessage"/> class is a fundamental building block in Chainer's dynamic
+///         The <see cref="ChainMessage" /> class is a fundamental building block in Chainer's dynamic
 ///         execution system. It defines a single step in a processing chain by specifying:
 ///         <list type="bullet">
 ///             <item>Which handler to execute (HandlerTypeName)</item>
@@ -27,7 +25,7 @@ namespace Chainer.Building.Messages;
 ///         </list>
 ///     </para>
 ///     <para>
-///         When executed by the <see cref="DynamicChainExecutor"/>, each message is transformed into
+///         When executed by the <see cref="DynamicChainExecutor" />, each message is transformed into
 ///         a handler instance that processes the context in sequence. The executor uses reflection
 ///         to locate and instantiate the handler type specified in the message.
 ///     </para>
@@ -61,7 +59,7 @@ public sealed class ChainMessage
     ///     <para>
     ///         In database implementations, this serves as the primary key for the message.
     ///         When a message is executed, this ID is typically transferred to the corresponding
-    ///         <see cref="ChainExecutionLog"/> to maintain traceability.
+    ///         <see cref="ChainExecutionLog" /> to maintain traceability.
     ///     </para>
     /// </remarks>
     public Guid Id { get; set; }
@@ -73,16 +71,16 @@ public sealed class ChainMessage
     ///     <para>
     ///         This ID groups related messages into a single chain. All messages with the
     ///         same ChainId form a complete processing pipeline when ordered by their
-    ///         <see cref="ExecutionOrder"/>.
+    ///         <see cref="ExecutionOrder" />.
     ///     </para>
     ///     <para>
-    ///         ChainId is used by the <see cref="DynamicChainExecutor"/> and repository
+    ///         ChainId is used by the <see cref="DynamicChainExecutor" /> and repository
     ///         implementations to retrieve all messages for a chain. It's important that this
     ///         ID remains consistent across all messages in the same chain.
     ///     </para>
     ///     <para>
     ///         For named chains, this ID is typically generated deterministically from the
-    ///         <see cref="FriendlyName"/> using <see cref="GuidFromString.CreateDeterministicGuid(string)"/>,
+    ///         <see cref="FriendlyName" /> using <see cref="GuidFromString.CreateDeterministicGuid(string)" />,
     ///         ensuring that the same name always maps to the same ID.
     ///     </para>
     /// </remarks>
@@ -94,17 +92,17 @@ public sealed class ChainMessage
     /// <remarks>
     ///     <para>
     ///         The friendly name provides a more accessible way to reference chains
-    ///         in code, configuration, and user interfaces. While <see cref="ChainId"/>
+    ///         in code, configuration, and user interfaces. While <see cref="ChainId" />
     ///         is used internally for lookups, this field makes chains more identifiable
     ///         for humans.
     ///     </para>
     ///     <para>
-    ///         This name can be used with <see cref="IDynamicChainExecutor.ExecuteChainAsync{TContext}(string, TContext, CancellationToken)"/>
+    ///         This name can be used with <see cref="IDynamicChainExecutor.ExecuteChainAsync{TContext}(string, TContext, CancellationToken)" />
     ///         to execute a chain by name rather than by ID. The executor will convert the name
     ///         to a deterministic GUID for lookup.
     ///     </para>
     ///     <para>
-    ///         Examples might include "OrderProcessingChain", "UserRegistrationWorkflow", or 
+    ///         Examples might include "OrderProcessingChain", "UserRegistrationWorkflow", or
     ///         "DataValidationPipeline", reflecting the business purpose of the chain.
     ///     </para>
     /// </remarks>
@@ -119,7 +117,7 @@ public sealed class ChainMessage
     ///         handlers in the same chain. Lower values indicate earlier execution.
     ///     </para>
     ///     <para>
-    ///         When the <see cref="DynamicChainExecutor"/> processes a chain, it sorts all
+    ///         When the <see cref="DynamicChainExecutor" /> processes a chain, it sorts all
     ///         messages by this field to determine the correct sequence. This allows chain
     ///         definitions to be stored or retrieved in any order while maintaining the
     ///         proper execution sequence.
@@ -143,12 +141,12 @@ public sealed class ChainMessage
     /// <remarks>
     ///     <para>
     ///         This should be the assembly-qualified name of a class that implements
-    ///         <see cref="IChainHandler{TContext}"/> for the context type specified in
-    ///         <see cref="ContextTypeName"/>.
+    ///         <see cref="IChainHandler{TContext}" /> for the context type specified in
+    ///         <see cref="ContextTypeName" />.
     ///     </para>
     ///     <para>
-    ///         During execution, the <see cref="DynamicChainExecutor"/> resolves this type
-    ///         using <see cref="Type.GetType(string)"/> and then attempts to:
+    ///         During execution, the <see cref="DynamicChainExecutor" /> resolves this type
+    ///         using <see cref="Type.GetType(string)" /> and then attempts to:
     ///         <list type="number">
     ///             <item>Retrieve an instance from the dependency injection container</item>
     ///             <item>Or create a new instance if not registered in DI</item>
@@ -170,23 +168,23 @@ public sealed class ChainMessage
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         This enum value indicates how the <see cref="Configuration"/> string should be
+    ///         This enum value indicates how the <see cref="Configuration" /> string should be
     ///         interpreted when configuring a handler. The supported types are:
     ///         <list type="bullet">
-    ///             <item><see cref="HandlerConfigurationType.Json"/> - JSON-formatted string</item>
-    ///             <item><see cref="HandlerConfigurationType.Xml"/> - XML-formatted string</item>
-    ///             <item><see cref="HandlerConfigurationType.Dictionary"/> - Serialized dictionary</item>
-    ///             <item><see cref="HandlerConfigurationType.Object"/> - Serialized object</item>
-    ///             <item><see cref="HandlerConfigurationType.NotSet"/> - No configuration</item>
+    ///             <item><see cref="HandlerConfigurationType.Json" /> - JSON-formatted string</item>
+    ///             <item><see cref="HandlerConfigurationType.Xml" /> - XML-formatted string</item>
+    ///             <item><see cref="HandlerConfigurationType.Dictionary" /> - Serialized dictionary</item>
+    ///             <item><see cref="HandlerConfigurationType.Object" /> - Serialized object</item>
+    ///             <item><see cref="HandlerConfigurationType.NotSet" /> - No configuration</item>
     ///         </list>
     ///     </para>
     ///     <para>
-    ///         The executor uses this value to determine how to parse the <see cref="Configuration"/>
-    ///         string when creating a <see cref="IHandlerConfiguration"/> object to pass to
-    ///         <see cref="IConfigurableChainHandler{TContext}.Configure(IHandlerConfiguration)"/>.
+    ///         The executor uses this value to determine how to parse the <see cref="Configuration" />
+    ///         string when creating a <see cref="IHandlerConfiguration" /> object to pass to
+    ///         <see cref="IConfigurableChainHandler{TContext}.Configure(IHandlerConfiguration)" />.
     ///     </para>
     ///     <para>
-    ///         The default is <see cref="HandlerConfigurationType.Json"/>, which is the most common
+    ///         The default is <see cref="HandlerConfigurationType.Json" />, which is the most common
     ///         format for externalized configuration and works well with most storage systems.
     ///     </para>
     /// </remarks>
@@ -198,11 +196,11 @@ public sealed class ChainMessage
     /// <remarks>
     ///     <para>
     ///         This field contains the configuration data that will be provided to the handler
-    ///         if it implements <see cref="IConfigurableChainHandler{TContext}"/>. The format of
-    ///         this string is determined by <see cref="ConfigurationType"/>.
+    ///         if it implements <see cref="IConfigurableChainHandler{TContext}" />. The format of
+    ///         this string is determined by <see cref="ConfigurationType" />.
     ///     </para>
     ///     <para>
-    ///         For handlers implementing <see cref="IConfigurableChainHandler{TContext}"/>, this
+    ///         For handlers implementing <see cref="IConfigurableChainHandler{TContext}" />, this
     ///         configuration is deserialized and passed to the handler's Configure method before
     ///         execution. Handlers that don't implement this interface will ignore the configuration.
     ///     </para>
@@ -231,9 +229,9 @@ public sealed class ChainMessage
     ///     <para>
     ///         This should be the assembly-qualified name of a class that:
     ///         <list type="bullet">
-    ///             <item>Implements <see cref="ICloneable"/></item>
+    ///             <item>Implements <see cref="ICloneable" /></item>
     ///             <item>Has a parameterless constructor</item>
-    ///             <item>Is the context type expected by the handler specified in <see cref="HandlerTypeName"/></item>
+    ///             <item>Is the context type expected by the handler specified in <see cref="HandlerTypeName" /></item>
     ///         </list>
     ///     </para>
     ///     <para>

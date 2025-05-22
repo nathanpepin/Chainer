@@ -3,51 +3,6 @@ namespace Chainer.Building.Configuration;
 /// <summary>
 ///     Defines a chain handler that can receive and use external configuration.
 /// </summary>
-/// <typeparam name="TContext">The context type that this handler processes</typeparam>
-/// <remarks>
-///     This interface extends IChainHandler&lt;TContext&gt; to add configuration capabilities.
-///     Chain handlers that implement this interface can receive configuration data during
-///     execution setup, allowing them to customize their behavior based on external settings
-///     without requiring code changes or recompilation.
-///     Configurable handlers are particularly useful in scenarios where:
-///     <list type="bullet">
-///         <item>Handler behavior needs to be adjusted per environment (dev, staging, production)</item>
-///         <item>Business rules encoded in handlers may change frequently</item>
-///         <item>The same handler needs different settings in different chains</item>
-///         <item>Configuration values should be externalized in config files rather than hardcoded</item>
-///     </list>
-///     The DynamicChainExecutor identifies handlers that implement this interface and automatically
-///     calls their Configure method with the appropriate configuration before execution.
-///     For simple configuration scenarios, consider inheriting from ConfigurableHandler&lt;TContext, TConfig&gt;
-///     which provides automatic binding to a strongly-typed configuration class.
-///     Example implementation:
-///     <code>
-/// public class EmailNotificationHandler : IConfigurableChainHandler&lt;OrderContext&gt;
-/// {
-///     private string _templatePath;
-///     private bool _sendCcToSupport;
-///     
-///     public void Configure(IHandlerConfiguration configuration)
-///     {
-///         if (configuration.TryBind&lt;EmailConfig&gt;(out var config) &amp;&amp; config != null)
-///         {
-///             _templatePath = config.TemplatePath;
-///             _sendCcToSupport = config.SendCcToSupport;
-///         }
-///     }
-///     
-///     public Task&lt;Result&lt;OrderContext&gt;&gt; Handle(
-///         OrderContext context,
-///         ILogger? logger = null,
-///         CancellationToken cancellationToken = default)
-///     {
-///         // Use _templatePath and _sendCcToSupport in email sending logic
-///         // ...
-///         return Task.FromResult&lt;Result&lt;OrderContext&gt;&gt;(context);
-///     }
-/// }
-/// </code>
-/// </remarks>
 public interface IConfigurableChainHandler<TContext> : IChainHandler<TContext>
     where TContext : class, ICloneable, new()
 {

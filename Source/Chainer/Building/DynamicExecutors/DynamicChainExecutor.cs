@@ -37,10 +37,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Cache of handler types to improve performance by avoiding repeated Type.GetType calls.
     /// </summary>
-    /// <remarks>
-    ///     Maps from the type name string to the resolved Type object. If a type cannot be resolved,
-    ///     its value will be null. The cache is thread-safe for concurrent access.
-    /// </remarks>
     private static readonly ConcurrentDictionary<string, Type?> TypeCache = new();
 
     /// <summary>
@@ -166,18 +162,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Prepares chain messages for execution by ordering them and creating execution items.
     /// </summary>
-    /// <param name="chainMessages">The collection of ChainMessage objects to prepare</param>
-    /// <returns>An immutable array of ExecutionItem objects ready for execution</returns>
-    /// <remarks>
-    ///     This method:
-    ///     <list type="bullet">
-    ///         <item>Orders the chain messages by their ExecutionOrder property</item>
-    ///         <item>Creates a ChainExecutionLog for each message to track execution status</item>
-    ///         <item>Pairs each message with its corresponding log in an ExecutionItem</item>
-    ///     </list>
-    ///     The resulting array represents the execution plan for the chain,
-    ///     with handlers ordered according to their defined sequence.
-    /// </remarks>
     private static ImmutableArray<ExecutionItem> PrepareOrderedExecutionItems(IEnumerable<ChainMessage> chainMessages)
     {
         return
@@ -191,23 +175,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Executes chain messages in order, passing the context between them and tracking execution status.
     /// </summary>
-    /// <typeparam name="TContext">The type of context to process</typeparam>
-    /// <param name="executionItems">The ordered execution items to process</param>
-    /// <param name="context">The initial context to process</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
-    /// <returns>A tuple containing success status, the final context, and any error message</returns>
-    /// <remarks>
-    ///     This method implements the core chain execution logic:
-    ///     <list type="number">
-    ///         <item>Saves initial execution logs for all items to the repository</item>
-    ///         <item>Processes each execution item in sequence</item>
-    ///         <item>If any handler fails, marks remaining handlers as skipped</item>
-    ///         <item>Returns the final context and success status</item>
-    ///     </list>
-    ///     The context is passed from handler to handler in sequence, with each handler
-    ///     potentially modifying it. If a handler fails, the chain stops processing
-    ///     at that point, and subsequent handlers are skipped.
-    /// </remarks>
     private async Task<(bool success, TContext context, string errorMessage)> ExecuteChainMessagesInOrderAsync<TContext>(
         ImmutableArray<ExecutionItem> executionItems,
         TContext context,
@@ -241,22 +208,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Executes a single chain message and updates its execution log.
     /// </summary>
-    /// <typeparam name="TContext">The type of context to process</typeparam>
-    /// <param name="item">The execution item containing the message and its log</param>
-    /// <param name="context">The context to process</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
-    /// <returns>A result containing the processed context or an error</returns>
-    /// <remarks>
-    ///     This method handles the execution of one chain handler:
-    ///     <list type="number">
-    ///         <item>Updates the execution log to indicate execution has started</item>
-    ///         <item>Retrieves, configures, and executes the handler</item>
-    ///         <item>Updates the execution log with the result status</item>
-    ///         <item>Returns the handler's result or a failure if an exception occurred</item>
-    ///     </list>
-    ///     Any exception during execution is caught and converted to a failure result,
-    ///     ensuring that chain execution can continue with subsequent handlers being marked as skipped.
-    /// </remarks>
     private async Task<Result<TContext>> ExecuteSingleMessageAsync<TContext>(
         ExecutionItem item,
         TContext context,
@@ -296,26 +247,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Retrieves, configures, and executes a chain handler according to its message.
     /// </summary>
-    /// <typeparam name="TContext">The type of context to process</typeparam>
-    /// <param name="message">The chain message defining the handler and its configuration</param>
-    /// <param name="context">The context to process</param>
-    /// <param name="log">The execution log to update</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
-    /// <returns>A result containing the processed context or an error</returns>
-    /// <remarks>
-    ///     This method is responsible for the core handler execution process:
-    ///     <list type="number">
-    ///         <item>Resolves the handler type from its name (using a cache for performance)</item>
-    ///         <item>Creates an instance of the handler (from DI or using ActivatorUtilities)</item>
-    ///         <item>Validates that the handler implements IChainHandler&lt;TContext&gt;</item>
-    ///         <item>Saves context data to the log if the handler implements ISaveBeforeContextData</item>
-    ///         <item>Configures the handler if it implements IConfigurableChainHandler&lt;TContext&gt;</item>
-    ///         <item>Executes the handler's Handle method</item>
-    ///         <item>Saves the result context to the log if the handler implements ISaveAfterContextData</item>
-    ///     </list>
-    ///     This method ensures that handlers are properly instantiated, configured, and executed,
-    ///     with appropriate context tracking if requested.
-    /// </remarks>
     private async Task<Result<TContext>> GetAndExecuteHandlerAsync<TContext>(
         ChainMessage message,
         TContext context,
@@ -333,12 +264,12 @@ public sealed class DynamicChainExecutor(
 
         if (handler is not IChainHandler<TContext> typedHandler)
             return Failure<TContext>($"Handler {handlerType.Name} does not implement IChainHandler<{typeof(TContext).Name}>");
-        
+
         await SaveBeforeContextDataIfNeeded(handler, context, log);
         ConfigureHandlerIfNeeded<TContext>(handler, message);
 
         var result = await typedHandler.Handle(context, logger, cancellationToken);
-        
+
         SaveAfterContextDataIfNeeded(log, result, handler);
 
         return result;
@@ -347,16 +278,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Saves the context after handler execution if the handler implements ISaveAfterContextData.
     /// </summary>
-    /// <typeparam name="TContext">The type of context to save</typeparam>
-    /// <param name="log">The execution log to update</param>
-    /// <param name="result">The result containing the context to save</param>
-    /// <param name="handler">The handler that processed the context</param>
-    /// <remarks>
-    ///     This method checks if the handler implements ISaveAfterContextData, and if so,
-    ///     serializes the context from the result to JSON and stores it in the log's AfterJson property.
-    ///     The context is only saved if the result was successful, as a failed result may not
-    ///     contain a valid context.
-    /// </remarks>
     private static void SaveAfterContextDataIfNeeded<TContext>(ChainExecutionLog log, Result<TContext> result, object handler)
         where TContext : class, ICloneable, new()
     {
@@ -366,17 +287,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Saves the context before handler execution if the handler implements ISaveBeforeContextData.
     /// </summary>
-    /// <typeparam name="TContext">The type of context to save</typeparam>
-    /// <param name="handler">The handler that will process the context</param>
-    /// <param name="context">The context to save</param>
-    /// <param name="log">The execution log to update</param>
-    /// <returns>A completed task</returns>
-    /// <remarks>
-    ///     This method checks if the handler implements ISaveBeforeContextData, and if so,
-    ///     serializes the context to JSON and stores it in the log's BeforeJson property.
-    ///     This allows tracking the state of the context before it was modified by the handler,
-    ///     which is useful for auditing and debugging.
-    /// </remarks>
     private static Task SaveBeforeContextDataIfNeeded<TContext>(object handler, TContext context, ChainExecutionLog log)
         where TContext : class, ICloneable, new()
     {
@@ -388,16 +298,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Configures a handler with its message configuration if it supports configuration.
     /// </summary>
-    /// <typeparam name="TContext">The type of context the handler processes</typeparam>
-    /// <param name="handler">The handler to configure</param>
-    /// <param name="message">The message containing configuration data</param>
-    /// <remarks>
-    ///     This method checks if the handler implements IConfigurableChainHandler&lt;TContext&gt;,
-    ///     and if so, creates a configuration object from the message's Configuration property
-    ///     and passes it to the handler's Configure method.
-    ///     If the message's Configuration property is null or empty, or if the handler does not
-    ///     implement IConfigurableChainHandler&lt;TContext&gt;, this method does nothing.
-    /// </remarks>
     private static void ConfigureHandlerIfNeeded<TContext>(
         object handler,
         ChainMessage message)
@@ -412,14 +312,6 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Marks a message as skipped in the repository.
     /// </summary>
-    /// <param name="log">The execution log to update</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
-    /// <returns>A task representing the asynchronous operation, with a result indicating success or failure</returns>
-    /// <remarks>
-    ///     This method is called for handlers that are not executed because a previous handler
-    ///     in the chain failed. It updates the handler's status to Skipped in the repository,
-    ///     which is useful for tracking the complete execution path of the chain.
-    /// </remarks>
     private Task<Result> MarkMessageSkipped(ChainExecutionLog log, CancellationToken cancellationToken)
     {
         return repository.UpdateChainExecutionLog(log, ChainMessageStatus.Skipped, cancellationToken);
@@ -428,11 +320,5 @@ public sealed class DynamicChainExecutor(
     /// <summary>
     ///     Pairs a chain message with its execution log for tracking execution status.
     /// </summary>
-    /// <param name="Message">The chain message defining the handler and its configuration</param>
-    /// <param name="ExecutionLog">The execution log tracking the status of this message</param>
-    /// <remarks>
-    ///     This record is used internally to maintain the relationship between a chain message
-    ///     and its corresponding execution log throughout the execution process.
-    /// </remarks>
     private record ExecutionItem(ChainMessage Message, ChainExecutionLog ExecutionLog);
 }

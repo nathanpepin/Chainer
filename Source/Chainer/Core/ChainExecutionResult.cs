@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Chainer.Building.DynamicExecutors;
+namespace Chainer.Core;
 
 /// <summary>
 ///     Contains the results of a dynamic chain execution, including both the final context state
@@ -78,13 +78,9 @@ public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, Im
         // Success/failure status and error if applicable
         output.AppendLine($"Success: {Context.IsSuccess}");
         if (Context.IsFailure)
-        {
             output.AppendLine($"Error: {Context.Error}");
-        }
         else
-        {
             output.AppendLine("Error: None");
-        }
 
         // Execution timing information
         var logsWithStartTime = ExecutionLogs.Where(log => log.ExecutedAt.HasValue).ToList();
@@ -109,10 +105,7 @@ public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, Im
         {
             var handlerName = log.HandlerTypeName;
             // Extract just the class name for readability
-            if (handlerName.Contains("Version=") && handlerName.Contains("Culture=") && handlerName.Contains("PublicKeyToken="))
-            {
-                handlerName = handlerName.Split(',').First();
-            }
+            if (handlerName.Contains("Version=") && handlerName.Contains("Culture=") && handlerName.Contains("PublicKeyToken=")) handlerName = handlerName.Split(',').First();
 
             var duration = log is { FinishedAt: not null, ExecutedAt: not null }
                 ? (log.FinishedAt.Value - log.ExecutedAt.Value).ToString()

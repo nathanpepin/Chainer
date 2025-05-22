@@ -8,85 +8,18 @@ namespace Chainer.Registration;
 ///     Provides utilities for registering chain configurations from application configuration
 ///     settings and binding type names to their fully qualified assembly names.
 /// </summary>
-/// <remarks>
-///     <para>
-///         The <see cref="BindFromIConfiguration"/> class is a core component of Chainer's
-///         configuration-driven chain system. It enables the definition of chains in application
-///         configuration files (such as appsettings.json) and handles the conversion of these
-///         definitions to runtime chain messages.
-///     </para>
-///     <para>
-///         This class solves a key challenge in configuration-based chains: the need to reference
-///         types by name in configuration while ensuring those names can be resolved to actual
-///         types at runtime. It accomplishes this through a type mapping system that allows
-///         simple names in configuration to be mapped to fully qualified assembly names.
-///     </para>
-///     <para>
-///         The typical usage flow is:
-///         <list type="number">
-///             <item>Register type mappings using one of the AddSimpleTypeMaps methods</item>
-///             <item>Call AddChainFromConfiguration to register chains from configuration</item>
-///             <item>Use the registered services with DynamicChainExecutor</item>
-///         </list>
-///     </para>
-///     <para>
-///         For example, in your application startup:
-///         <code>
-///         // Register type mappings
-///         BindFromIConfiguration.AddSimpleTypeMaps&lt;OrderContext&gt;();
-///         BindFromIConfiguration.AddSimpleTypeMaps&lt;ValidateOrderHandler&gt;();
-///         BindFromIConfiguration.AddSimpleTypeMaps&lt;ProcessPaymentHandler&gt;();
-///         
-///         // Register chains from configuration
-///         services.AddChainFromConfiguration(configuration, "OrderProcessingChain");
-///         </code>
-///     </para>
-///     <para>
-///         This approach provides several benefits:
-///         <list type="bullet">
-///             <item>Separation of chain definition from code</item>
-///             <item>Runtime reconfiguration without application redeployment</item>
-///             <item>Environment-specific chain configurations</item>
-///             <item>Simplified type references in configuration files</item>
-///         </list>
-///     </para>
-/// </remarks>
 public static class BindFromIConfiguration
 {
     /// <summary>
     ///     Default serialization options for JSON conversion of configuration objects.
     /// </summary>
-    /// <remarks>
-    ///     These options are used when serializing configuration objects to JSON format.
-    ///     The WriteIndented option is set to false to produce compact JSON strings
-    ///     suitable for storage in configuration.
-    /// </remarks>
     private static readonly JsonSerializerOptions JsonSerializerOptions = new() { WriteIndented = false };
 
     /// <summary>
     ///     A dictionary used to store mappings between simple keys and the fully qualified assembly names of context and
     ///     handler types.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         This dictionary is the heart of the type mapping system. It serves as a lookup table
-    ///         that maps simple type names (as used in configuration files) to fully qualified 
-    ///         assembly names (as required for runtime type resolution).
-    ///     </para>
-    ///     <para>
-    ///         For example, it might contain a mapping from "OrderContext" to 
-    ///         "MyCompany.OrderProcessing.Models.OrderContext, MyCompany.OrderProcessing, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null".
-    ///     </para>
-    ///     <para>
-    ///         This dictionary is populated by the various AddSimpleTypeMaps methods and is used
-    ///         by the AddChainFromConfiguration method to resolve type names from configuration.
-    ///     </para>
-    ///     <para>
-    ///         The dictionary is static and shared across all uses of BindFromIConfiguration,
-    ///         allowing for centralized type registration at application startup.
-    ///     </para>
-    /// </remarks>
-    internal static Dictionary<string, string> SimpleTypeMaps { get; } = [];
+    private static Dictionary<string, string> SimpleTypeMaps { get; } = [];
 
     /// <summary>
     ///     Adds a mapping between a given key and the assembly-qualified name of the specified type.
@@ -130,7 +63,7 @@ public static class BindFromIConfiguration
     /// <param name="type">The type whose assembly-qualified name will be stored</param>
     /// <remarks>
     ///     <para>
-    ///         This method is similar to <see cref="AddSimpleTypeMaps{T}(string)"/> but accepts
+    ///         This method is similar to <see cref="AddSimpleTypeMaps{T}(string)" /> but accepts
     ///         a Type object directly instead of using a generic type parameter. This is useful
     ///         when the type is not known at compile time or when working with reflection.
     ///     </para>
@@ -215,10 +148,10 @@ public static class BindFromIConfiguration
     ///         This method is the core of the configuration-based chain system. It:
     ///         <list type="number">
     ///             <item>Loads a chain definition from a configuration section</item>
-    ///             <item>Resolves type names using the <see cref="SimpleTypeMaps"/> dictionary</item>
-    ///             <item>Converts the configuration to <see cref="ChainMessage"/> objects</item>
+    ///             <item>Resolves type names using the <see cref="SimpleTypeMaps" /> dictionary</item>
+    ///             <item>Converts the configuration to <see cref="ChainMessage" /> objects</item>
     ///             <item>Registers these messages with the service collection</item>
-    ///             <item>Ensures an <see cref="IChainRepository"/> is registered</item>
+    ///             <item>Ensures an <see cref="IChainRepository" /> is registered</item>
     ///         </list>
     ///     </para>
     ///     <para>
@@ -245,12 +178,12 @@ public static class BindFromIConfiguration
     ///     </para>
     ///     <para>
     ///         The ContextTypeName and HandlerTypeName values are resolved against the
-    ///         <see cref="SimpleTypeMaps"/> dictionary to convert simple names to fully
+    ///         <see cref="SimpleTypeMaps" /> dictionary to convert simple names to fully
     ///         qualified assembly names.
     ///     </para>
     ///     <para>
-    ///         This method also registers an <see cref="InMemoryChainRepository"/> with the
-    ///         service collection if no implementation of <see cref="IChainRepository"/> is
+    ///         This method also registers an <see cref="InMemoryChainRepository" /> with the
+    ///         service collection if no implementation of <see cref="IChainRepository" /> is
     ///         already registered. This repository will be populated with the chain messages
     ///         created from the configuration.
     ///     </para>
@@ -281,7 +214,7 @@ public static class BindFromIConfiguration
                               throw new InvalidOperationException($"ContextTypeName missing in chain configuration under '{sectionName}'"),
             Chains = section.GetSection("Chains")
                 .GetChildren()
-                .Select(x => new ChainConfigurationGroup.ChainConfigurationItem
+                .Select(x => new ChainConfigurationItem
                 {
                     HandlerTypeName = x["HandlerTypeName"] ??
                                       throw new InvalidOperationException($"HandlerTypeName missing in chain configuration under '{sectionName}'"),
@@ -318,30 +251,6 @@ public static class BindFromIConfiguration
     /// <summary>
     ///     Resolves a type name against the type map dictionary, returning the mapped name if found.
     /// </summary>
-    /// <param name="typeName">The type name to resolve</param>
-    /// <param name="typeMap">The dictionary of type name mappings</param>
-    /// <returns>
-    ///     The mapped type name if found in the dictionary, otherwise the original type name
-    /// </returns>
-    /// <remarks>
-    ///     <para>
-    ///         This helper method attempts to look up a type name in the provided mapping dictionary.
-    ///         If the name is found, the corresponding fully qualified assembly name is returned.
-    ///         If not found, the original name is returned unchanged.
-    ///     </para>
-    ///     <para>
-    ///         This approach allows for seamless handling of both simple names (which are mapped)
-    ///         and already-qualified names (which pass through unchanged). It also gracefully
-    ///         handles cases where a mapping hasn't been registered for a particular type name.
-    ///     </para>
-    ///     <para>
-    ///         For example:
-    ///         <list type="bullet">
-    ///             <item>"OrderContext" might resolve to "MyCompany.OrderProcessing.Models.OrderContext, MyCompany.OrderProcessing, ..."</item>
-    ///             <item>"MyCompany.Other.Context, ..." would remain unchanged if no mapping exists</item>
-    ///         </list>
-    ///     </para>
-    /// </remarks>
     private static string ReplaceTypeNameIfMapped(string typeName, Dictionary<string, string> typeMap)
     {
         return typeMap.GetValueOrDefault(typeName, typeName);
@@ -350,49 +259,6 @@ public static class BindFromIConfiguration
     /// <summary>
     ///     Converts an IConfigurationSection to a .NET object, handling various section structures.
     /// </summary>
-    /// <param name="section">The configuration section to convert</param>
-    /// <returns>
-    ///     A .NET object representing the configuration section:
-    ///     - A string value for leaf sections
-    ///     - A List for array sections
-    ///     - A Dictionary for object sections
-    /// </returns>
-    /// <remarks>
-    ///     <para>
-    ///         This helper method recursively converts an IConfigurationSection hierarchy into
-    ///         a corresponding hierarchy of .NET objects. It handles three main section types:
-    ///         <list type="bullet">
-    ///             <item>Leaf sections (with no children) are converted to string values</item>
-    ///             <item>Array sections (with numeric keys) are converted to Lists</item>
-    ///             <item>Object sections (with named keys) are converted to Dictionaries</item>
-    ///         </list>
-    ///     </para>
-    ///     <para>
-    ///         This conversion enables the configuration data to be serialized to JSON and
-    ///         stored in <see cref="ChainMessage"/> objects for use by handlers.
-    ///     </para>
-    ///     <para>
-    ///         The conversion maintains the hierarchical structure of the configuration,
-    ///         allowing for complex nested configurations to be properly represented.
-    ///     </para>
-    ///     <para>
-    ///         For example, a configuration section like:
-    ///         <code>
-    ///         {
-    ///           "Property1": "Value1",
-    ///           "Nested": {
-    ///             "SubProperty": 42
-    ///           },
-    ///           "Array": [
-    ///             "Item1",
-    ///             "Item2"
-    ///           ]
-    ///         }
-    ///         </code>
-    ///         would be converted to a dictionary with a string value, a nested dictionary,
-    ///         and a list.
-    ///     </para>
-    /// </remarks>
     private static object ConvertConfigurationToObject(IConfigurationSection section)
     {
         if (!section.GetChildren().Any()) return section.Value ?? new object();
