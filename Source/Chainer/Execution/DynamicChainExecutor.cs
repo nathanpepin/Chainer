@@ -29,9 +29,6 @@ namespace Chainer.Execution;
 ///         <item>Dynamic handler resolution and instantiation</item>
 ///     </list>
 /// </remarks>
-/// <param name="repository">The repository for retrieving chain configurations and storing execution logs</param>
-/// <param name="serviceProvider">The service provider for resolving handler dependencies</param>
-/// <param name="logger">The logger for recording execution information</param>
 public sealed class DynamicChainExecutor(
     IChainRepository repository,
     IServiceProvider serviceProvider,
@@ -49,11 +46,6 @@ public sealed class DynamicChainExecutor(
     /// <param name="initialContext">The initial context to process, or null to create a new instance</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
     /// <returns>A result containing the processed context and execution logs</returns>
-    /// <remarks>
-    ///     The default chain is identified by InMemoryChainRepository.DefaultChainGuid,
-    ///     which is a predefined GUID used as a standard identifier for the default chain.
-    ///     This method is a convenience wrapper around ExecuteChainAsync(Guid, TContext, CancellationToken).
-    /// </remarks>
     public Task<ChainExecutionResult<TContext>> ExecuteDefaultChainAsync<TContext>(TContext? initialContext = null,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new()
@@ -69,13 +61,6 @@ public sealed class DynamicChainExecutor(
     /// <param name="initialContext">The initial context to process, or null to create a new instance</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
     /// <returns>A result containing the processed context and execution logs</returns>
-    /// <remarks>
-    ///     The friendly name is converted to a deterministic GUID using GuidFromString,
-    ///     which ensures that the same name always maps to the same GUID.
-    ///     This allows chains to be referenced by human-readable names rather than GUIDs,
-    ///     while still maintaining consistent identification across systems.
-    ///     This method is a convenience wrapper around ExecuteChainAsync(Guid, TContext, CancellationToken).
-    /// </remarks>
     public Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(string friendlyName, TContext? initialContext = null,
         CancellationToken cancellationToken = default)
         where TContext : class, ICloneable, new()
@@ -91,18 +76,6 @@ public sealed class DynamicChainExecutor(
     /// <param name="chainId">The unique identifier of the chain to execute</param>
     /// <param name="initialContext">The initial context to process, or null to create a new instance</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
-    /// <returns>A result containing the processed context and execution logs</returns>
-    /// <remarks>
-    ///     This method:
-    ///     <list type="number">
-    ///         <item>Retrieves the chain configuration from the repository using the chainId</item>
-    ///         <item>Returns a failure result if the chain configuration cannot be retrieved</item>
-    ///         <item>
-    ///             Delegates to ExecuteChainAsync(IEnumerable&lt;ChainMessage&gt;, TContext, CancellationToken) for
-    ///             execution
-    ///         </item>
-    ///     </list>
-    /// </remarks>
     public async Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         Guid chainId,
         TContext? initialContext = null,
@@ -124,19 +97,6 @@ public sealed class DynamicChainExecutor(
     /// <param name="initialContext">The initial context to process, or null to create a new instance</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
     /// <returns>A result containing the processed context and execution logs</returns>
-    /// <remarks>
-    ///     This is the core execution method that:
-    ///     <list type="number">
-    ///         <item>Prepares the chain messages for execution by sorting and wrapping them</item>
-    ///         <item>Creates a new context instance if initialContext is null</item>
-    ///         <item>Executes the chain handlers in order, passing the context between them</item>
-    ///         <item>Collects execution logs for each handler</item>
-    ///         <item>Returns a composite result with both the final context and execution logs</item>
-    ///     </list>
-    ///     This method allows for in-memory chain execution without requiring the chain
-    ///     to be pre-registered in a repository, which is useful for ad-hoc or dynamically
-    ///     generated chains.
-    /// </remarks>
     public async Task<ChainExecutionResult<TContext>> ExecuteChainAsync<TContext>(
         IEnumerable<ChainMessage> chainMessages,
         TContext? initialContext = null,

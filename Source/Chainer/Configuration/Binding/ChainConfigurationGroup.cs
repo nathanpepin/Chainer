@@ -4,11 +4,6 @@ namespace Chainer.Configuration.Binding;
 ///     A data model for storing chain configurations in a structured format, primarily designed
 ///     for use with application configuration systems like IConfiguration.
 /// </summary>
-/// <remarks>
-///     This class provides a way to define a complete chain processing pipeline through configuration,
-///     including the context type and a sequence of handlers with their configurations.
-///     It can convert these definitions into ChainMessage objects for runtime processing.
-/// </remarks>
 public sealed class ChainConfigurationGroup
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new() { WriteIndented = true };

@@ -57,36 +57,6 @@ public interface IChainRepository
     /// <summary>
     ///     Retrieves the messages that define the default chain.
     /// </summary>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests</param>
-    /// <returns>
-    ///     A task representing the asynchronous operation, with a result containing
-    ///     the list of chain messages or an error
-    /// </returns>
-    /// <remarks>
-    ///     <para>
-    ///         The default chain is identified by a predefined GUID
-    ///         (<see cref="InMemoryChainRepository.DefaultChainGuid" />), which serves as
-    ///         a standard identifier for the system's default chain configuration.
-    ///     </para>
-    ///     <para>
-    ///         This method is used by <see cref="IDynamicChainExecutor.ExecuteDefaultChainAsync{TContext}" />
-    ///         to retrieve the default chain without requiring an explicit chain ID.
-    ///         It's a convenience method that wraps <see cref="GetChainMessagesAsync(Guid, CancellationToken)" />
-    ///         with the default chain GUID.
-    ///     </para>
-    ///     <para>
-    ///         Implementations should:
-    ///         <list type="bullet">
-    ///             <item>Return an empty list if no default chain messages exist (not an error)</item>
-    ///             <item>Return a failure result if an error occurs during retrieval</item>
-    ///             <item>Ensure messages are sorted by their ExecutionOrder property</item>
-    ///         </list>
-    ///     </para>
-    ///     <para>
-    ///         Database implementations typically query for all records with the specified ChainId
-    ///         and order them by ExecutionOrder.
-    ///     </para>
-    /// </remarks>
     Task<Result<List<ChainMessage>>> GetDefaultChainMessagesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

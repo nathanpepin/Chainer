@@ -44,26 +44,12 @@ public abstract class HandlerConfiguration<TContext, TConfig> : IConfigurableCha
     /// <summary>
     ///     Gets the current configuration for this handler.
     /// </summary>
-    /// <remarks>
-    ///     This property is automatically set when the Configure method is called,
-    ///     typically by the DynamicChainExecutor during chain execution setup.
-    ///     Initialized with a default instance to avoid null reference exceptions,
-    ///     but may be null if configuration binding fails.
-    ///     Implementations should handle the possibility of null by providing fallback values.
-    /// </remarks>
     protected TConfig? Configuration { get; private set; } = new();
 
     /// <summary>
     ///     Configures the handler by binding the provided configuration data to a TConfig object.
     /// </summary>
     /// <param name="configuration">The configuration data provider</param>
-    /// <remarks>
-    ///     This method is called by the DynamicChainExecutor before the handler is executed.
-    ///     It uses the Bind&lt;TConfig&gt; method from IHandlerConfiguration to convert the
-    ///     raw configuration data into a strongly-typed TConfig object.
-    ///     Override this method to customize the configuration binding process or to perform
-    ///     additional setup based on the configuration.
-    /// </remarks>
     public virtual void Configure(IHandlerConfiguration configuration)
     {
         Configuration = configuration.Bind<TConfig>();
@@ -76,14 +62,6 @@ public abstract class HandlerConfiguration<TContext, TConfig> : IConfigurableCha
     /// <param name="logger">Optional logger for diagnostic output</param>
     /// <param name="cancellationToken">Token to monitor for cancellation requests</param>
     /// <returns>A Task containing a Result with either the processed context or an error</returns>
-    /// <remarks>
-    ///     This is the core processing method that subclasses must implement.
-    ///     Implementations can access the typed configuration through the Configuration property.
-    ///     Return a successful Result by returning the modified context:
-    ///     <code>return Task.FromResult&lt;Result&lt;TContext&gt;&gt;(context);</code>
-    ///     Return a failure Result by using Result's static methods:
-    ///     <code>return Task.FromResult(Result&lt;TContext&gt;.Failure("Error message"));</code>
-    /// </remarks>
     public abstract Task<Result<TContext>> Handle(
         TContext context,
         ILogger? logger = null,

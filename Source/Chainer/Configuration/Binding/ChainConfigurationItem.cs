@@ -3,10 +3,6 @@ namespace Chainer.Configuration.Binding;
 /// <summary>
 ///     Represents a single handler configuration within a chain.
 /// </summary>
-/// <remarks>
-///     Each ChainConfigurationItem defines one step in the processing pipeline,
-///     including which handler to use and any configuration data it needs.
-/// </remarks>
 public sealed class ChainConfigurationItem
 {
     /// <summary>
