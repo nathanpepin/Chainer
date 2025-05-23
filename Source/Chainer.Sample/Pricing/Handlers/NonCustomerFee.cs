@@ -1,11 +1,11 @@
-using Chainer.Building.Configuration.Persistence;
-using Chainer.Core;
+using Chainer.Abstractions;
+using Chainer.Persistence;
 using Chainer.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Chainer.Sample.Pricing.Handlers;
 
-public sealed class NonCustomerFee : IChainHandler<PriceContext>, ISaveBeforeContextData, ISaveAfterContextData
+public sealed class NonCustomerFee : IChainHandler<PriceContext>, IContextPersistence
 {
     private const decimal NonCustomerFeeAmount = 5;
 
@@ -19,4 +19,6 @@ public sealed class NonCustomerFee : IChainHandler<PriceContext>, ISaveBeforeCon
 
         return Task.FromResult<Result<PriceContext>>(context);
     }
+
+    public PersistencePoint PersistWhen => PersistencePoint.Both;
 }

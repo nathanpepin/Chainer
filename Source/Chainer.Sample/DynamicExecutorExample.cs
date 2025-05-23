@@ -1,6 +1,5 @@
-using System.Collections.Immutable;
-using Chainer.Building.DynamicExecutors;
-using Chainer.Building.Messages;
+using Chainer.Abstractions;
+using Chainer.Execution;
 using Chainer.Registration;
 using Chainer.Sample.Pricing;
 using Chainer.Sample.Pricing.Handlers;
@@ -17,11 +16,11 @@ public static class DynamicExecutorExample
     {
         var builder = Host.CreateApplicationBuilder(strings);
 
-        BindFromIConfiguration.AddSimpleTypeMaps<PriceContext>();
-        BindFromIConfiguration.AddSimpleTypeMaps<NonCustomerFee>();
-        BindFromIConfiguration.AddSimpleTypeMaps<OldAgeDiscount>();
-        BindFromIConfiguration.AddSimpleTypeMaps<StorewideSale>();
-        BindFromIConfiguration.AddSimpleTypeMaps<VipDiscount>();
+        ConfigurationRegistrationExtensions.AddSimpleTypeMaps<PriceContext>();
+        ConfigurationRegistrationExtensions.AddSimpleTypeMaps<NonCustomerFee>();
+        ConfigurationRegistrationExtensions.AddSimpleTypeMaps<OldAgeDiscount>();
+        ConfigurationRegistrationExtensions.AddSimpleTypeMaps<StorewideSale>();
+        ConfigurationRegistrationExtensions.AddSimpleTypeMaps<VipDiscount>();
 
 
         // Register the dynamic chain from configuration

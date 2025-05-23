@@ -1,11 +1,11 @@
-using Chainer.Building.Configuration;
-using Chainer.Building.Configuration.Persistence;
+using Chainer.Abstractions;
+using Chainer.Persistence;
 using Chainer.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Chainer.Sample.Pricing.Handlers;
 
-public sealed class StorewideSale : IConfigurableChainHandler<PriceContext>, ISaveBeforeContextData, ISaveAfterContextData
+public sealed class StorewideSale : IConfigurableChainHandler<PriceContext>, IContextPersistence
 {
     public StorewideSaleConfiguration? Configuration { get; set; }
 
@@ -22,6 +22,8 @@ public sealed class StorewideSale : IConfigurableChainHandler<PriceContext>, ISa
     {
         Configuration = configuration.Bind<StorewideSaleConfiguration>();
     }
+
+    public PersistencePoint PersistWhen => PersistencePoint.Both;
 
     public sealed class StorewideSaleConfiguration
     {

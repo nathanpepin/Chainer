@@ -1,11 +1,11 @@
-using Chainer.Building.Configuration.Persistence;
-using Chainer.Core;
+using Chainer.Abstractions;
+using Chainer.Persistence;
 using Chainer.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Chainer.Sample.Pricing.Handlers;
 
-public sealed class VipDiscount : IChainHandler<PriceContext>, ISaveBeforeContextData, ISaveAfterContextData
+public sealed class VipDiscount : IChainHandler<PriceContext>, IContextPersistence
 {
     private const decimal VipDiscountAmount = 65;
 
@@ -19,4 +19,6 @@ public sealed class VipDiscount : IChainHandler<PriceContext>, ISaveBeforeContex
 
         return Task.FromResult<Result<PriceContext>>(context);
     }
+
+    public PersistencePoint PersistWhen => PersistencePoint.Both;
 }
