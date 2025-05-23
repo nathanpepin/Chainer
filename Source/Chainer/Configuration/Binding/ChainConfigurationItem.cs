@@ -19,7 +19,7 @@ public sealed class ChainConfigurationItem
     ///     The handler type must implement IChainHandler&lt;TContext&gt; for the context type specified in the parent
     ///     configuration.
     /// </remarks>
-    public string HandlerTypeName { get; internal set; } = string.Empty;
+    public string HandlerTypeName { get; set; } = string.Empty;
 
     /// <summary>
     ///     Optional configuration data for the handler.
@@ -30,5 +30,5 @@ public sealed class ChainConfigurationItem
     ///     will be passed to their Configure method during chain execution.
     ///     If null, no configuration will be provided to the handler.
     /// </remarks>
-    public object? Configuration { get; internal set; } = string.Empty;
+    public object? Configuration { get; set; } = string.Empty;
 }

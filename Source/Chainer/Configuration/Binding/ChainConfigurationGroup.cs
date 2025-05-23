@@ -21,7 +21,7 @@ public sealed class ChainConfigurationGroup
     ///     </list>
     ///     The context type must implement ICloneable and have a parameterless constructor.
     /// </remarks>
-    public string ContextTypeName { get; internal set; } = string.Empty;
+    public string ContextTypeName { get; set; } = string.Empty;
 
     /// <summary>
     ///     An ordered list of handlers that will process the context in sequence.
@@ -30,7 +30,7 @@ public sealed class ChainConfigurationGroup
     ///     The order of handlers in this list determines their execution sequence in the chain.
     ///     Each handler can optionally have its own configuration.
     /// </remarks>
-    public List<ChainConfigurationItem> Chains { get; init; } = [];
+    public List<ChainConfigurationItem> Chains { get; set; } = [];
 
     /// <summary>
     ///     Converts this configuration group into a list of ChainMessage objects ready for processing.
