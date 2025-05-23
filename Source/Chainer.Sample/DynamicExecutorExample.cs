@@ -32,7 +32,7 @@ public static class DynamicExecutorExample
         var host = builder.Build();
 
         // Get the dynamic chain executor
-        var dynamicExecutor = host.Services.GetRequiredService<IDynamicChainExecutor>();
+        var executor = host.Services.GetRequiredService<IDynamicChainExecutor>();
 
         var customer = new Customer
         {
@@ -41,14 +41,7 @@ public static class DynamicExecutorExample
             IsVip = true
         };
         var context = new PriceContext { Customer = customer, CurrentPrice = 100, InitialPrice = 100 };
-        var result = await dynamicExecutor.ExecuteChainAsync(Pricing, context);
+        var result = await executor.ExecuteChainAsync(Pricing, context);
         Console.WriteLine(result);
-
-        /*
-        - VipDiscount: Completed - {"InitialPrice":100,"CurrentPrice":35,"Customer":{"Name":"Nathan Pepin","Age":30,"IsVip":true}}
-        - OldAgeDiscount: Completed - {"InitialPrice":100,"CurrentPrice":35,"Customer":{"Name":"Nathan Pepin","Age":30,"IsVip":true}}
-        - StorewideSale: Completed - {"InitialPrice":100,"CurrentPrice":34.95,"Customer":{"Name":"Nathan Pepin","Age":30,"IsVip":true}}
-        - NonCustomerFee: Completed - {"InitialPrice":100,"CurrentPrice":39.95,"Customer":{"Name":"Nathan Pepin","Age":30,"IsVip":true}}
-         */
     }
 }

@@ -33,7 +33,7 @@ namespace Chainer.Execution;
 ///         Two execution modes are available:
 ///         <list type="bullet">
 ///             <item>
-///                 <see cref="Execute" /> - Processes the context through all handlers and returns
+///                 <see cref="ExecuteAsync" /> - Processes the context through all handlers and returns
 ///                 the final result. This is ideal for simple processing needs.
 ///             </item>
 ///             <item>
@@ -143,7 +143,7 @@ public sealed class ChainExecutor<TContext>(IEnumerable<IChainHandler<TContext>>
     ///     A <see cref="Result{TContext}" /> containing either the successfully processed context
     ///     or information about the failure if any handler failed or threw an exception.
     /// </returns>
-    public async Task<ChainExecutionResult<TContext>> Execute(TContext? context = null, CancellationToken cancellationToken = default)
+    public async Task<ChainExecutionResult<TContext>> ExecuteAsync(TContext? context = null, CancellationToken cancellationToken = default)
     {
         logger?.LogInformation("Executing chain");
 

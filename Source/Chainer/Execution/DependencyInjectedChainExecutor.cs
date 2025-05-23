@@ -61,7 +61,7 @@ namespace Chainer.Execution;
 ///             <item>Registering all handlers in the DI container</item>
 ///             <item>Registering the chain service itself in the DI container</item>
 ///             <item>Injecting the service where chain execution is needed</item>
-///             <item>Calling <see cref="Execute" /> or <see cref="ExecuteWithHistory" /> with an appropriate context</item>
+///             <item>Calling <see cref="ExecuteAsync" /> or <see cref="ExecuteWithHistory" /> with an appropriate context</item>
 ///         </list>
 ///     </para>
 ///     <para>
@@ -129,7 +129,7 @@ public abstract class DependencyInjectedChainExecutor<TContext>(IServiceProvider
     ///         when all required handlers are available.
     ///     </para>
     ///     <para>
-    ///         This method delegates the actual execution to <see cref="ChainExecutor{TContext}.Execute" />,
+    ///         This method delegates the actual execution to <see cref="ChainExecutor{TContext}.ExecuteAsync" />,
     ///         providing a consistent execution model while handling the DI resolution aspects.
     ///     </para>
     /// </remarks>
@@ -143,11 +143,11 @@ public abstract class DependencyInjectedChainExecutor<TContext>(IServiceProvider
     ///     A <see cref="Result{TContext}" /> containing either the successfully processed context
     ///     or information about the failure if handler resolution or execution failed.
     /// </returns>
-    public async Task<ChainExecutionResult<TContext>> Execute(TContext? context, CancellationToken cancellationToken = default)
+    public async Task<ChainExecutionResult<TContext>> ExecuteAsync(TContext? context, CancellationToken cancellationToken = default)
     {
         if (GetRegisteredHandlers() is not (false, _) registration)
             return await new ChainExecutor<TContext>([..Handlers], LoggingEnabled ? logger : null)
-                .Execute(context, cancellationToken);
+                .ExecuteAsync(context, cancellationToken);
 
         var executionLogs = ChainHandlers
             .Select(ChainExecutionLog.Create<TContext>)
