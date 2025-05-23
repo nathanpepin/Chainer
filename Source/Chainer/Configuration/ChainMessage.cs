@@ -1,4 +1,3 @@
-using Chainer.Abstractions;
 using Chainer.Execution;
 
 namespace Chainer.Configuration;

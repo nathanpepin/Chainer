@@ -1,6 +1,4 @@
-using Chainer.Abstractions;
 using Chainer.Execution;
-using Chainer.Registration;
 using Chainer.Sample.Pricing;
 using Chainer.Sample.Pricing.Handlers;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,18 +10,6 @@ namespace Chainer.Sample;
 public static class DependencyInjectedChainExecutorExample
 {
     private const string Pricing = "Pricing";
-
-    public sealed class PricingExecutor(IServiceProvider services, ILogger<DependencyInjectedChainExecutor<PriceContext>> logger)
-        : DependencyInjectedChainExecutor<PriceContext>(services, logger)
-    {
-        protected override List<Type> ChainHandlers { get; } =
-        [
-            typeof(NonCustomerFee),
-            typeof(OldAgeDiscount),
-            typeof(StorewideSale),
-            typeof(VipDiscount)
-        ];
-    }
 
     public static async Task Run(string[] strings)
     {
@@ -59,5 +45,17 @@ public static class DependencyInjectedChainExecutorExample
         var context = new PriceContext { Customer = customer, CurrentPrice = 100, InitialPrice = 100 };
         var result = await executor.ExecuteAsync(context);
         Console.WriteLine(result);
+    }
+
+    public sealed class PricingExecutor(IServiceProvider services, ILogger<DependencyInjectedChainExecutor<PriceContext>> logger)
+        : DependencyInjectedChainExecutor<PriceContext>(services, logger)
+    {
+        protected override List<Type> ChainHandlers { get; } =
+        [
+            typeof(NonCustomerFee),
+            typeof(OldAgeDiscount),
+            typeof(StorewideSale),
+            typeof(VipDiscount)
+        ];
     }
 }

@@ -22,7 +22,7 @@ public sealed record ChainExecutionResult<TContext>(Result<TContext> Context, Im
     }
 
     /// <summary>
-    /// Outputs the execution result to a string
+    ///     Outputs the execution result to a string
     /// </summary>
     /// <param name="writeArguments">If true, the arguments of each handler will be written to the output string.</param>
     /// <returns></returns>
