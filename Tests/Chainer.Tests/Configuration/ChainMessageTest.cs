@@ -9,5 +9,6 @@ public class ChainMessageTest
     [Fact]
     public void METHOD()
     {
+        Assert.Fail("Not implemented");
     }
 }

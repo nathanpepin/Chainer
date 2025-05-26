@@ -9,5 +9,6 @@ public class ConfigurationRegistrationExtensionsTest
     [Fact]
     public void METHOD()
     {
+        Assert.Fail("Not implemented");
     }
 }

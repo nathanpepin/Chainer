@@ -9,5 +9,6 @@ public class InMemoryChainRepositoryTest
     [Fact]
     public void METHOD()
     {
+        Assert.Fail("Not implemented");
     }
 }

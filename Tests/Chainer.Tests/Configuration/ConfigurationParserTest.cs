@@ -9,5 +9,6 @@ public class ConfigurationParserTest
     [Fact]
     public void METHOD()
     {
+        Assert.Fail("Not implemented");
     }
 }

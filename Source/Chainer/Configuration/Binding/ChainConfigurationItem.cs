@@ -30,5 +30,5 @@ public sealed class ChainConfigurationItem
     ///     will be passed to their Configure method during chain execution.
     ///     If null, no configuration will be provided to the handler.
     /// </remarks>
-    public object? Configuration { get; set; } = string.Empty;
+    public object? Configuration { get; set; }
 }

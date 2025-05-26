@@ -9,5 +9,6 @@ public class ChainConfigurationItemTest
     [Fact]
     public void METHOD()
     {
+        Assert.Fail("Not implemented");
     }
 }
